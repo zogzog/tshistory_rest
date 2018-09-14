@@ -78,6 +78,27 @@ get.add_argument(
     help='insertion date can be forced'
 )
 
+history = base.copy()
+history.add_argument(
+    'name', type=str, required=True,
+    help='timeseries name'
+)
+history.add_argument(
+    'from_insertion_date', type=utcdt, default=None
+)
+history.add_argument(
+    'to_insertion_date', type=utcdt, default=None
+)
+history.add_argument(
+    'from_value_date', type=utcdt, default=None
+)
+history.add_argument(
+    'to_value_date', type=utcdt, default=None
+)
+history.add_argument(
+    'diffmode', type=bool, default=False
+)
+
 
 def blueprint(engine):
 
@@ -129,6 +150,32 @@ def blueprint(engine):
                 response = make_response(
                     series.to_json(orient='index',
                                    date_format='iso')
+                )
+            else:
+                response = make_response('null')
+            response.headers['Content-Type'] = 'text/json'
+            return response
+
+    @ns.route('/history')
+    class timeseries_history(Resource):
+
+        @api.doc(parser=history)
+        def get(self):
+            args = history.parse_args()
+            tsh = tsio.TimeSerie(namespace=args.namespace)
+            with engine.begin() as cn:
+                hist = tsh.get_history(
+                    cn, args.name,
+                    from_insertion_date=args.from_insertion_date,
+                    to_insertion_date=args.to_insertion_date,
+                    from_value_date=args.from_value_date,
+                    to_value_date=args.to_value_date,
+                    diffmode=args.diffmode
+                )
+
+            if hist is not None:
+                response = make_response(
+                    pd.DataFrame(hist).to_json()
                 )
             else:
                 response = make_response('null')

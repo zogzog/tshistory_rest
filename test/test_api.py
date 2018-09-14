@@ -1,3 +1,5 @@
+import pandas as pd
+
 from tshistory import util
 from tshistory.testutil import utcdt, genserie, assert_df
 
@@ -77,3 +79,70 @@ def test_api(client):
     # checkout non-existent series
     res = client.get('/series/state?name=foo')
     assert res.json is None
+
+    # history
+    res = client.get('/series/history?name=test')
+    df = pd.read_json(res.body)
+
+    # we real client would need to handle timestamp
+    # tz-awareness
+    assert_df("""
+2018-01-01 10:00:00  2018-01-01 13:00:00
+2018-01-01 00:00:00                  0.0                    0
+2018-01-01 01:00:00                  1.0                    1
+2018-01-01 02:00:00                  2.0                    2
+2018-01-01 03:00:00                  NaN                    3
+""", df)
+
+    # diff mode
+    res = client.get('/series/history', params={
+        'name': 'test',
+        'diffmode': True
+    })
+    df = pd.read_json(res.body)
+
+    assert_df("""
+2018-01-01 10:00:00  2018-01-01 13:00:00
+2018-01-01 00:00:00                  0.0                  NaN
+2018-01-01 01:00:00                  1.0                  NaN
+2018-01-01 02:00:00                  2.0                  NaN
+2018-01-01 03:00:00                  NaN                  3.0
+""", df)
+
+    # empty range
+    res = client.get('/series/history', params={
+        'name': 'test',
+        'from_insertion_date': utcdt(2018, 1, 1, 11),
+        'to_insertion_date': utcdt(2018, 1, 1, 12),
+    })
+    df = pd.read_json(res.body)
+    assert len(df) == 0
+
+    # insertion dates subset
+    res = client.get('/series/history', params={
+        'name': 'test',
+        'from_insertion_date': utcdt(2018, 1, 1, 10),
+        'to_insertion_date': utcdt(2018, 1, 1, 12),
+    })
+    df = pd.read_json(res.body)
+
+    assert_df("""
+                     2018-01-01 10:00:00
+2018-01-01 00:00:00                    0
+2018-01-01 01:00:00                    1
+2018-01-01 02:00:00                    2
+""", df)
+
+    # value dates subset
+    res = client.get('/series/history', params={
+        'name': 'test',
+        'from_value_date': utcdt(2018, 1, 1, 2),
+        'to_value_date': utcdt(2018, 1, 1, 3),
+    })
+    df = pd.read_json(res.body)
+
+    assert_df("""
+                     2018-01-01 10:00:00  2018-01-01 13:00:00
+2018-01-01 02:00:00                  2.0                    2
+2018-01-01 03:00:00                  NaN                    3
+""", df)
