@@ -66,3 +66,14 @@ def test_api(client):
 2018-01-01 01:00:00+00:00    1.0
 2018-01-01 02:00:00+00:00    2.0
 """, series)
+
+    # checkout too far in the past
+    res = client.get('/series/state', params={
+        'name': 'test',
+        'insertion_date': utcdt(2018, 1, 1, 0)
+    })
+    assert res.json is None
+
+    # checkout non-existent series
+    res = client.get('/series/state?name=foo')
+    assert res.json is None
