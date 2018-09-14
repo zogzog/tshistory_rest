@@ -146,3 +146,35 @@ def test_api(client):
 2018-01-01 02:00:00                  2.0                    2
 2018-01-01 03:00:00                  NaN                    3
 """, df)
+
+
+def test_staircase(client):
+    # each days we insert 7 data points
+    for idx, idate in enumerate(pd.DatetimeIndex(start=utcdt(2015, 1, 1),
+                                                 end=utcdt(2015, 1, 4),
+                                                 freq='D')):
+        series = genserie(start=idate, freq='H', repeat=7)
+        client.patch('/series/state', params={
+            'name': 'staircase',
+            'series': util.tojson(series),
+            'author': 'Babar',
+            'insertion_date': idate,
+            'tzaware': util.tzaware_serie(series)
+    })
+
+    res = client.get('/series/staircase', params={
+        'name': 'staircase',
+        'delta': pd.Timedelta(hours=3),
+        'from_value_date': utcdt(2015, 1, 1, 4),
+        'to_value_date': utcdt(2015, 1, 2, 5),
+    })
+    series = util.fromjson(res.body, 'test', True)
+
+    assert_df("""
+2015-01-01 04:00:00+00:00    4.0
+2015-01-01 05:00:00+00:00    5.0
+2015-01-01 06:00:00+00:00    6.0
+2015-01-02 03:00:00+00:00    3.0
+2015-01-02 04:00:00+00:00    4.0
+2015-01-02 05:00:00+00:00    5.0
+""", series)

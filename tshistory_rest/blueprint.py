@@ -99,6 +99,23 @@ history.add_argument(
     'diffmode', type=bool, default=False
 )
 
+staircase = base.copy()
+staircase.add_argument(
+    'name', type=str, required=True,
+    help='timeseries name'
+)
+staircase.add_argument(
+    'delta', type=pd.Timedelta, required=True,
+    help='time delta in iso 8601 duration'
+)
+staircase.add_argument(
+    'from_value_date', type=utcdt, default=None
+)
+staircase.add_argument(
+    'to_value_date', type=utcdt, default=None
+)
+
+
 
 def blueprint(engine):
 
@@ -176,6 +193,29 @@ def blueprint(engine):
             if hist is not None:
                 response = make_response(
                     pd.DataFrame(hist).to_json()
+                )
+            else:
+                response = make_response('null')
+            response.headers['Content-Type'] = 'text/json'
+            return response
+
+    @ns.route('/staircase')
+    class timeseries_staircase(Resource):
+
+        @api.doc(parser=staircase)
+        def get(self):
+            args = staircase.parse_args()
+            tsh = tsio.TimeSerie(namespace=args.namespace)
+            with engine.begin() as cn:
+                series = tsh.get_delta(
+                    cn, args.name, delta=args.delta,
+                    from_value_date=args.from_value_date,
+                    to_value_date=args.to_value_date,
+                )
+
+            if series is not None:
+                response = make_response(
+                    series.to_json(orient='index', date_format='iso')
                 )
             else:
                 response = make_response('null')
