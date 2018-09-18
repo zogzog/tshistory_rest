@@ -117,7 +117,7 @@ staircase.add_argument(
 
 
 
-def blueprint(engine):
+def blueprint(engine, tshclass=tsio.TimeSerie):
 
     @ns.route('/metadata')
     class timeseries_metadata(Resource):
@@ -125,7 +125,7 @@ def blueprint(engine):
         @api.doc(parser=metadata)
         def get(self):
             args = metadata.parse_args()
-            tsh = tsio.TimeSerie(namespace=args.namespace)
+            tsh = tshclass(namespace=args.namespace)
             with engine.begin() as cn:
                 meta = tsh.metadata(cn, args.name)
             return meta, 200
@@ -136,7 +136,7 @@ def blueprint(engine):
         @api.doc(parser=insert)
         def patch(self):
             args = insert.parse_args()
-            tsh = tsio.TimeSerie(namespace=args.namespace)
+            tsh = tshclass(namespace=args.namespace)
             series = util.fromjson(args.series, args.name)
             if args.tzaware:
                 # pandas to_json converted to utc
@@ -156,7 +156,7 @@ def blueprint(engine):
         @api.doc(parser=get)
         def get(self):
             args = get.parse_args()
-            tsh = tsio.TimeSerie(namespace=args.namespace)
+            tsh = tshclass(namespace=args.namespace)
             with engine.begin() as cn:
                 series = tsh.get(
                     cn, args.name,
@@ -179,7 +179,7 @@ def blueprint(engine):
         @api.doc(parser=history)
         def get(self):
             args = history.parse_args()
-            tsh = tsio.TimeSerie(namespace=args.namespace)
+            tsh = tshclass(namespace=args.namespace)
             with engine.begin() as cn:
                 hist = tsh.get_history(
                     cn, args.name,
@@ -205,7 +205,7 @@ def blueprint(engine):
         @api.doc(parser=staircase)
         def get(self):
             args = staircase.parse_args()
-            tsh = tsio.TimeSerie(namespace=args.namespace)
+            tsh = tshclass(namespace=args.namespace)
             with engine.begin() as cn:
                 series = tsh.get_delta(
                     cn, args.name, delta=args.delta,
