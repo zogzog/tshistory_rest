@@ -23,6 +23,7 @@ api = Api(
     title='tshistory api',
     description='tshistory timeseries store rest api'
 )
+api.namespaces.pop(0)  # wipe the default namespace
 
 ns = api.namespace(
     'series',
