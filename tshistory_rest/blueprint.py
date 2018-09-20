@@ -36,12 +36,12 @@ base.add_argument(
     'namespace', type=str, default='tsh',
     help='timeseries store namespace'
 )
-
-insert = base.copy()
-insert.add_argument(
+base.add_argument(
     'name', type=str, required=True,
     help='timeseries name'
 )
+
+insert = base.copy()
 insert.add_argument(
     'series', type=str, required=True,
     help='json representation of the series'
@@ -64,26 +64,14 @@ insert.add_argument(
 )
 
 metadata = base.copy()
-metadata.add_argument(
-    'name', type=str, required=True,
-    help='series name'
-)
 
 get = base.copy()
-get.add_argument(
-    'name', type=str, required=True,
-    help='timeseries name'
-)
 get.add_argument(
     'insertion_date', type=utcdt, default=None,
     help='insertion date can be forced'
 )
 
 history = base.copy()
-history.add_argument(
-    'name', type=str, required=True,
-    help='timeseries name'
-)
 history.add_argument(
     'from_insertion_date', type=utcdt, default=None
 )
@@ -101,10 +89,6 @@ history.add_argument(
 )
 
 staircase = base.copy()
-staircase.add_argument(
-    'name', type=str, required=True,
-    help='timeseries name'
-)
 staircase.add_argument(
     'delta', type=pd.Timedelta, required=True,
     help='time delta in iso 8601 duration'
