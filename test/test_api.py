@@ -4,7 +4,37 @@ from tshistory import util
 from tshistory.testutil import utcdt, genserie, assert_df
 
 
-def test_api(client):
+def test_no_series(client):
+    res = client.get('/series/state?name=no-such-series')
+    assert res.status_code == 404
+    assert res.json == {
+        'message': '`no-such-series` does not exists'
+    }
+
+    res = client.get('/series/metadata?name=no-such-series')
+    assert res.status_code == 404
+    assert res.json == {
+        'message': '`no-such-series` does not exists'
+    }
+
+    res = client.get('/series/history?name=no-such-series')
+    assert res.status_code == 404
+    assert res.json == {
+        'message': '`no-such-series` does not exists'
+    }
+
+    res = client.get('/series/staircase', params={
+        'name': 'no-such-series',
+        'delta': pd.Timedelta(hours=3)
+    })
+
+    assert res.status_code == 404
+    assert res.json == {
+        'message': '`no-such-series` does not exists'
+    }
+
+
+def test_base(client):
     series_in = genserie(utcdt(2018, 1, 1), 'H', 3)
     res = client.patch('/series/state', params={
         'name': 'test',
@@ -74,10 +104,6 @@ def test_api(client):
         'name': 'test',
         'insertion_date': utcdt(2018, 1, 1, 0)
     })
-    assert res.json is None
-
-    # checkout non-existent series
-    res = client.get('/series/state?name=foo')
     assert res.json is None
 
     # history

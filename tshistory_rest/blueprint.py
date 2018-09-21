@@ -1,7 +1,7 @@
 import pandas as pd
 
 from flask import Blueprint, request, make_response
-from flask_restplus import Api, Resource, reqparse
+from flask_restplus import Api as baseapi, Resource, reqparse
 
 from tshistory import tsio, util
 
@@ -16,6 +16,13 @@ bp = Blueprint(
     template_folder='tshr_templates',
     static_folder='tshr_static',
 )
+
+class Api(baseapi):
+
+    # see https://github.com/flask-restful/flask-restful/issues/67
+    def _help_on_404(self, message=None):
+        return message or 'No such thing.'
+
 
 api = Api(
     bp,
@@ -111,6 +118,10 @@ def blueprint(engine, tshclass=tsio.TimeSerie):
         def get(self):
             args = metadata.parse_args()
             tsh = tshclass(namespace=args.namespace)
+
+            if not tsh.exists(engine, args.name):
+                api.abort(404, f'`{args.name}` does not exists')
+
             with engine.begin() as cn:
                 meta = tsh.metadata(cn, args.name)
             return meta, 200
@@ -142,6 +153,10 @@ def blueprint(engine, tshclass=tsio.TimeSerie):
         def get(self):
             args = get.parse_args()
             tsh = tshclass(namespace=args.namespace)
+
+            if not tsh.exists(engine, args.name):
+                api.abort(404, f'`{args.name}` does not exists')
+
             with engine.begin() as cn:
                 series = tsh.get(
                     cn, args.name,
@@ -165,6 +180,10 @@ def blueprint(engine, tshclass=tsio.TimeSerie):
         def get(self):
             args = history.parse_args()
             tsh = tshclass(namespace=args.namespace)
+
+            if not tsh.exists(engine, args.name):
+                api.abort(404, f'`{args.name}` does not exists')
+
             with engine.begin() as cn:
                 hist = tsh.get_history(
                     cn, args.name,
@@ -191,6 +210,10 @@ def blueprint(engine, tshclass=tsio.TimeSerie):
         def get(self):
             args = staircase.parse_args()
             tsh = tshclass(namespace=args.namespace)
+
+            if not tsh.exists(engine, args.name):
+                api.abort(404, f'`{args.name}` does not exists')
+
             with engine.begin() as cn:
                 series = tsh.get_delta(
                     cn, args.name, delta=args.delta,
