@@ -48,6 +48,10 @@ def test_base(client):
 
     res = client.get('/series/metadata?name=test')
     meta = res.json
+    assert meta == {}
+
+    res = client.get('/series/metadata?name=test&all=1')
+    meta = res.json
     assert meta == {
         'index_dtype': '|M8[ns]',
         'index_names': [],

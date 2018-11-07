@@ -71,6 +71,10 @@ insert.add_argument(
 )
 
 metadata = base.copy()
+metadata.add_argument(
+    'all', type=bool, default=False,
+    help='get all metadata, including internal'
+)
 
 get = base.copy()
 get.add_argument(
@@ -124,6 +128,14 @@ def blueprint(engine, tshclass=tsio.TimeSerie):
 
             with engine.begin() as cn:
                 meta = tsh.metadata(cn, args.name)
+
+            # remove internal if asked
+            if not args.all:
+                meta = {
+                    key: val for key, val in meta.items()
+                    if key not in tsh.metakeys
+                }
+
             return meta, 200
 
     @ns.route('/state')
