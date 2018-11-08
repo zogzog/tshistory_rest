@@ -3,7 +3,12 @@ import json
 import pandas as pd
 
 from flask import Blueprint, request, make_response
-from flask_restplus import Api as baseapi, Resource, reqparse
+from flask_restplus import (
+    Api as baseapi,
+    inputs,
+    Resource,
+    reqparse
+)
 
 from tshistory import tsio, util
 
@@ -64,7 +69,7 @@ insert.add_argument(
     help='insertion date can be forced'
 )
 insert.add_argument(
-    'tzaware', type=bool, default=True,
+    'tzaware', type=inputs.boolean, default=True,
     help='tzaware series'
 )
 insert.add_argument(
@@ -74,7 +79,7 @@ insert.add_argument(
 
 metadata = base.copy()
 metadata.add_argument(
-    'all', type=bool, default=False,
+    'all', type=inputs.boolean, default=False,
     help='get all metadata, including internal'
 )
 put_metadata = base.copy()
@@ -104,7 +109,7 @@ history.add_argument(
     'to_value_date', type=utcdt, default=None
 )
 history.add_argument(
-    'diffmode', type=bool, default=False
+    'diffmode', type=inputs.boolean, default=False
 )
 
 staircase = base.copy()
