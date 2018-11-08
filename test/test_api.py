@@ -1,3 +1,4 @@
+import json
 import pandas as pd
 
 from tshistory import util
@@ -35,6 +36,7 @@ def test_no_series(client):
 
 
 def test_base(client):
+    # insert
     series_in = genserie(utcdt(2018, 1, 1), 'H', 3)
     res = client.patch('/series/state', params={
         'name': 'test',
@@ -46,6 +48,7 @@ def test_base(client):
 
     assert res.status_code == 201
 
+    # metadata
     res = client.get('/series/metadata?name=test')
     meta = res.json
     assert meta == {}
@@ -61,6 +64,32 @@ def test_base(client):
         'value_type': 'float64'
     }
 
+    res = client.put('/series/metadata', params={
+        'metadata': json.dumps({
+            'freq': 'D',
+            'description': 'banana spot price'
+        }),
+        'name': 'test'
+    })
+    assert res.status_code == 200
+    res = client.get('/series/metadata?name=test')
+    meta2 = res.json
+    assert meta2 == {
+        'freq': 'D',
+        'description': 'banana spot price'
+    }
+
+    # metadata: delete by uploading an empty dict
+    res = client.put('/series/metadata', params={
+        'metadata': json.dumps({}),
+        'name': 'test'
+    })
+    assert res.status_code == 200
+    res = client.get('/series/metadata?name=test')
+    meta2 = res.json
+    assert meta2 == {}
+
+    # get
     res = client.get('/series/state?name=test')
     series = util.fromjson(res.body, 'test', meta['tzaware'])
     assert_df("""

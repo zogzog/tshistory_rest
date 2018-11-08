@@ -1,3 +1,5 @@
+import json
+
 import pandas as pd
 
 from flask import Blueprint, request, make_response
@@ -75,6 +77,12 @@ metadata.add_argument(
     'all', type=bool, default=False,
     help='get all metadata, including internal'
 )
+put_metadata = base.copy()
+put_metadata.add_argument(
+    'metadata', type=str, required=True,
+    help='set new metadata for a series'
+)
+
 
 get = base.copy()
 get.add_argument(
@@ -137,6 +145,21 @@ def blueprint(engine, tshclass=tsio.TimeSerie):
                 }
 
             return meta, 200
+
+        @api.doc(parser=put_metadata)
+        def put(self):
+            args = put_metadata.parse_args()
+            tsh = tshclass(namespace=args.namespace)
+
+            if not tsh.exists(engine, args.name):
+                api.abort(404, f'`{args.name}` does not exists')
+
+            metadata = json.loads(args.metadata)
+            with engine.begin() as cn:
+                tsh.update_metadata(cn, args.name, metadata)
+
+            return '', 200
+
 
     @ns.route('/state')
     class timeseries_state(Resource):
