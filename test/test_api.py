@@ -207,6 +207,18 @@ def test_base(client):
 """, df)
 
 
+    # state/get from from/to value date restriction
+    res = client.get('/series/state', params={
+        'name': 'test',
+        'from_value_date': utcdt(2018, 1, 1, 1),
+        'to_value_date': utcdt(2018, 1, 1, 2)
+    })
+    assert res.json == {
+        '2018-01-01T01:00:00.000Z': 1.0,
+        '2018-01-01T02:00:00.000Z': 2.0
+    }
+
+
 def test_staircase(client):
     # each days we insert 7 data points
     for idx, idate in enumerate(pd.DatetimeIndex(start=utcdt(2015, 1, 1),

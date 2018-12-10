@@ -94,6 +94,12 @@ get.add_argument(
     'insertion_date', type=utcdt, default=None,
     help='insertion date can be forced'
 )
+get.add_argument(
+    'from_value_date', type=utcdt, default=None
+)
+get.add_argument(
+    'to_value_date', type=utcdt, default=None
+)
 
 history = base.copy()
 history.add_argument(
@@ -200,7 +206,9 @@ def blueprint(engine, tshclass=tsio.TimeSerie):
             with engine.begin() as cn:
                 series = tsh.get(
                     cn, args.name,
-                    revision_date=args.insertion_date
+                    revision_date=args.insertion_date,
+                    from_value_date=args.from_value_date,
+                    to_value_date=args.to_value_date
                 )
 
             if series is not None:
