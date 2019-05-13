@@ -221,9 +221,9 @@ def test_base(client):
 
 def test_staircase(client):
     # each days we insert 7 data points
-    for idx, idate in enumerate(pd.DatetimeIndex(start=utcdt(2015, 1, 1),
-                                                 end=utcdt(2015, 1, 4),
-                                                 freq='D')):
+    for idx, idate in enumerate(pd.date_range(start=utcdt(2015, 1, 1),
+                                              end=utcdt(2015, 1, 4),
+                                              freq='D')):
         series = genserie(start=idate, freq='H', repeat=7)
         client.patch('/series/state', params={
             'name': 'staircase',

@@ -1,7 +1,7 @@
 from datetime import datetime
 from pathlib import Path
 
-from sqlalchemy import create_engine, MetaData
+from sqlalchemy import create_engine
 import pytest
 from pytest_sa_pg import db
 import webtest
@@ -20,8 +20,9 @@ def engine(request):
         'log_timezone': 'UTC'}
     )
     e = create_engine('postgresql://localhost:5433/postgres')
-    schema.reset(e)
-    schema.init(e, MetaData())
+    sch = schema.tsschema()
+    sch.destroy(e)
+    schema.init_schemas(e)
     return e
 
 
