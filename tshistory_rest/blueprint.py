@@ -131,6 +131,13 @@ staircase.add_argument(
 )
 
 
+catalog = reqparse.RequestParser()
+catalog.add_argument(
+    'namespace', type=str, default='tsh',
+    help='timeseries store namespace'
+)
+
+
 
 def blueprint(engine, tshclass=tsio.timeseries):
 
@@ -278,4 +285,16 @@ def blueprint(engine, tshclass=tsio.timeseries):
             response.headers['Content-Type'] = 'text/json'
             return response
 
+    @ns.route('/catalog')
+    class timeseries_catalog(Resource):
+
+        @api.doc(parser=catalog)
+        def get(self):
+            args = catalog.parse_args()
+            tsh = tshclass(namespace=args.namespace)
+
+            with engine.begin() as cn:
+                return tsh.list_series(cn)
+
     return bp
+

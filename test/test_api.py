@@ -48,6 +48,11 @@ def test_base(client):
 
     assert res.status_code == 201
 
+    # catalog
+    res = client.get('/series/catalog')
+    assert res.status_code == 200
+    assert res.json == {'test': 'primary'}
+
     # metadata
     res = client.get('/series/metadata?name=test')
     meta = res.json
