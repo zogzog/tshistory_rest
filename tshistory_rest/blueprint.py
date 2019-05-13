@@ -132,7 +132,7 @@ staircase.add_argument(
 
 
 
-def blueprint(engine, tshclass=tsio.TimeSerie):
+def blueprint(engine, tshclass=tsio.timeseries):
 
     @ns.route('/metadata')
     class timeseries_metadata(Resource):
@@ -233,7 +233,7 @@ def blueprint(engine, tshclass=tsio.TimeSerie):
                 api.abort(404, f'`{args.name}` does not exists')
 
             with engine.begin() as cn:
-                hist = tsh.get_history(
+                hist = tsh.history(
                     cn, args.name,
                     from_insertion_date=args.from_insertion_date,
                     to_insertion_date=args.to_insertion_date,
@@ -263,7 +263,7 @@ def blueprint(engine, tshclass=tsio.TimeSerie):
                 api.abort(404, f'`{args.name}` does not exists')
 
             with engine.begin() as cn:
-                series = tsh.get_delta(
+                series = tsh.staircase(
                     cn, args.name, delta=args.delta,
                     from_value_date=args.from_value_date,
                     to_value_date=args.to_value_date,
