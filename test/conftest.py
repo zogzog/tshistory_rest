@@ -21,8 +21,7 @@ def engine(request):
     )
     e = create_engine('postgresql://localhost:5433/postgres')
     sch = schema.tsschema()
-    sch.destroy(e)
-    schema.init_schemas(e)
+    sch.create(e)
     return e
 
 
