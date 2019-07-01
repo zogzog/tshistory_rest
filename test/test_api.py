@@ -62,7 +62,6 @@ def test_base(client):
     meta = res.json
     assert meta == {
         'index_dtype': '|M8[ns]',
-        'index_names': [],
         'index_type': 'datetime64[ns, UTC]',
         'tzaware': True,
         'value_dtype': '<f8',
