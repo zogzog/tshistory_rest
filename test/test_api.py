@@ -223,6 +223,28 @@ def test_base(client):
     }
 
 
+def test_delete(client):
+    series_in = genserie(utcdt(2018, 1, 1), 'H', 3)
+    res = client.patch('/series/state', params={
+        'name': 'test',
+        'series': util.tojson(series_in),
+        'author': 'Babar',
+        'insertion_date': utcdt(2018, 1, 1, 10),
+        'tzaware': util.tzaware_serie(series_in)
+    })
+
+    res = client.delete('/series/state', params={
+        'name': 'no-such-series'
+    })
+    assert res.status_code == 404
+    res = client.delete('/series/state', params={
+        'name': 'test'
+    })
+    assert res.status_code == 200
+    res = client.get('/series/catalog')
+    assert 'test' not in res.json
+
+
 def test_staircase(client):
     # each days we insert 7 data points
     for idx, idate in enumerate(pd.date_range(start=utcdt(2015, 1, 1),
@@ -253,3 +275,4 @@ def test_staircase(client):
 2015-01-02 04:00:00+00:00    4.0
 2015-01-02 05:00:00+00:00    5.0
 """, series)
+

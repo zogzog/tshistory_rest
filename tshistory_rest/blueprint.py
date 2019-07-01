@@ -101,6 +101,8 @@ get.add_argument(
     'to_value_date', type=utcdt, default=None
 )
 
+delete = base.copy()
+
 history = base.copy()
 history.add_argument(
     'from_insertion_date', type=utcdt, default=None
@@ -227,6 +229,20 @@ def blueprint(engine, tshclass=tsio.timeseries):
                 response = make_response('null')
             response.headers['Content-Type'] = 'text/json'
             return response
+
+        @api.doc(parser=delete)
+        def delete(self):
+            args = delete.parse_args()
+            tsh = tshclass(namespace=args.namespace)
+
+            if not tsh.exists(engine, args.name):
+                api.abort(404, f'`{args.name}` does not exists')
+
+            with engine.begin() as cn:
+                tsh.delete(cn, args.name)
+
+            # should be a 204 but https://github.com/flask-restful/flask-restful/issues/736
+            return args.name, 200
 
     @ns.route('/history')
     class timeseries_history(Resource):
