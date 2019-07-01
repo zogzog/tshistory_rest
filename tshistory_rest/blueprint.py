@@ -77,6 +77,12 @@ insert.add_argument(
     help='metadata associated with this insertion'
 )
 
+rename = base.copy()
+rename.add_argument(
+    'newname', type=str, required=True,
+    help='new name of the series'
+)
+
 metadata = base.copy()
 metadata.add_argument(
     'all', type=inputs.boolean, default=False,
@@ -203,6 +209,22 @@ def blueprint(engine, tshclass=tsio.timeseries):
                 )
 
             return '', 200 if exists else 201
+
+        @api.doc(parser=rename)
+        def put(self):
+            args = rename.parse_args()
+            tsh = tshclass(namespace=args.namespace)
+
+            if not tsh.exists(engine, args.name):
+                api.abort(404, f'`{args.name}` does not exists')
+            if tsh.exists(engine, args.newname):
+                api.abort(409, f'`{args.newname}` does exists')
+
+            with engine.begin() as cn:
+                tsh.rename(cn, args.name, args.newname)
+
+            # should be a 204 but https://github.com/flask-restful/flask-restful/issues/736
+            return '', 200
 
         @api.doc(parser=get)
         def get(self):

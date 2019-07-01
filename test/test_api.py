@@ -245,6 +245,47 @@ def test_delete(client):
     assert 'test' not in res.json
 
 
+def test_rename(client):
+    series_in = genserie(utcdt(2018, 1, 1), 'H', 3)
+    res = client.patch('/series/state', params={
+        'name': 'test',
+        'series': util.tojson(series_in),
+        'author': 'Babar',
+        'insertion_date': utcdt(2018, 1, 1, 10),
+        'tzaware': util.tzaware_serie(series_in)
+    })
+    res = client.put('/series/state', params={
+        'name': 'no-such-series',
+        'newname': 'no-better'
+    })
+    assert res.status_code == 404
+    res = client.put('/series/state', params={
+        'name': 'test',
+        'newname': 'test2'
+    })
+    assert res.status_code == 200
+    res = client.get('/series/catalog')
+    assert res.json == {
+        'test2': 'primary'
+    }
+
+    res = client.patch('/series/state', params={
+        'name': 'test3',
+        'series': util.tojson(series_in),
+        'author': 'Babar',
+        'insertion_date': utcdt(2018, 1, 1, 10),
+        'tzaware': util.tzaware_serie(series_in)
+    })
+    res = client.put('/series/state', params={
+        'name': 'test2',
+        'newname': 'test3'
+    })
+    assert res.status_code == 409
+    assert res.json == {
+        'message': '`test3` does exists'
+    }
+
+
 def test_staircase(client):
     # each days we insert 7 data points
     for idx, idate in enumerate(pd.date_range(start=utcdt(2015, 1, 1),
