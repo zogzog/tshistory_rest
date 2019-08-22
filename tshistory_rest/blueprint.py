@@ -205,7 +205,7 @@ def blueprint(engine, tshclass=tsio.timeseries):
                 tsh.insert(
                     cn, series, args.name, args.author,
                     metadata=args.metadata,
-                    _insertion_date=args.insertion_date
+                    insertion_date=args.insertion_date
                 )
 
             return '', 200 if exists else 201
