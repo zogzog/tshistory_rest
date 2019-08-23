@@ -341,9 +341,10 @@ def test_get_fast_path(client):
     index, values = util.binary_unpack(out.body)
     index, values = util.numpy_deserialize(index, values, meta)
     series = pd.Series(values, index=index)
+    series = series.tz_localize('UTC')
 
     assert_df("""
-2018-01-01 00:00:00    0.0
-2018-01-01 01:00:00    1.0
-2018-01-01 02:00:00    2.0
+2018-01-01 00:00:00+00:00    0.0
+2018-01-01 01:00:00+00:00    1.0
+2018-01-01 02:00:00+00:00    2.0
 """, series)
