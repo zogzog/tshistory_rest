@@ -1,5 +1,6 @@
 import json
 import pandas as pd
+import zlib
 
 from tshistory import util
 from tshistory.testutil import utcdt, genserie, assert_df
@@ -338,7 +339,7 @@ def test_get_fast_path(client):
         'name': 'test_fast',
         'mode': 'numpy'
     })
-    index, values = util.binary_unpack(out.body)
+    index, values = util.binary_unpack(zlib.decompress(out.body))
     index, values = util.numpy_deserialize(index, values, meta)
     series = pd.Series(values, index=index)
     series = series.tz_localize('UTC')

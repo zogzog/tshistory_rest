@@ -1,5 +1,6 @@
 import json
 import io
+import zlib
 
 import numpy as np
 import pandas as pd
@@ -279,7 +280,7 @@ def blueprint(engine, tshclass=tsio.timeseries):
                 metadata['value_type'] == 'object'
             )
             stream.write(
-                util.binary_pack(index, values)
+                zlib.compress(util.binary_pack(index, values))
             )
             response = make_response(
                 stream.getvalue()
