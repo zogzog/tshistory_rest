@@ -162,6 +162,21 @@ catalog.add_argument(
 )
 
 
+def binary_pack_meta_data(meta, series):
+    stream = io.BytesIO()
+    index, values = util.numpy_serialize(
+        series,
+        meta['value_type'] == 'object'
+    )
+    bmeta = json.dumps(meta).encode('utf-8')
+    bdata = util.binary_pack(index, values)
+    stream.write(
+        zlib.compress(
+            util.binary_pack(bmeta, bdata)
+        )
+    )
+    return stream.getvalue()
+
 
 def blueprint(engine, tshclass=tsio.timeseries):
 
@@ -273,21 +288,8 @@ def blueprint(engine, tshclass=tsio.timeseries):
                 response.headers['Content-Type'] = 'text/json'
                 return response
 
-            # let's wrapp the numpy arrays to be efficient
-            stream = io.BytesIO()
-            index, values = util.numpy_serialize(
-                series,
-                metadata['value_type'] == 'object'
-            )
-            bmeta = json.dumps(metadata).encode('utf-8')
-            bdata = util.binary_pack(index, values)
-            stream.write(
-                zlib.compress(
-                    util.binary_pack(bmeta, bdata)
-                )
-            )
             response = make_response(
-                stream.getvalue()
+                binary_pack_meta_data(metadata, series)
             )
             response.headers['Content-Type'] = 'application/octet-stream'
             return response
