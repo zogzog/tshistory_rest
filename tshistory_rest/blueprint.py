@@ -1,5 +1,7 @@
 import json
+import io
 
+import numpy as np
 import pandas as pd
 
 from flask import Blueprint, request, make_response
@@ -105,6 +107,9 @@ get.add_argument(
 )
 get.add_argument(
     'to_value_date', type=utcdt, default=None
+)
+get.add_argument(
+    'numpy', type=inputs.boolean, default=False
 )
 
 delete = base.copy()
@@ -241,15 +246,35 @@ def blueprint(engine, tshclass=tsio.timeseries):
                     from_value_date=args.from_value_date,
                     to_value_date=args.to_value_date
                 )
+                # the fast path will need it
+                # also it is read from a cache filled at get time
+                # so very cheap call
+                metadata = tsh.metadata(cn, args.name)
 
-            if series is not None:
-                response = make_response(
-                    series.to_json(orient='index',
-                                   date_format='iso')
-                )
-            else:
-                response = make_response('null')
-            response.headers['Content-Type'] = 'text/json'
+            if not args.numpy:
+                if series is not None:
+                    response = make_response(
+                        series.to_json(orient='index',
+                                       date_format='iso')
+                    )
+                else:
+                    response = make_response('null')
+                response.headers['Content-Type'] = 'text/json'
+                return response
+
+            # let's wrapp the numpy arrays to be efficient
+            stream = io.BytesIO()
+            index, values = util.numpy_serialize(
+                series,
+                metadata['value_type'] == 'object'
+            )
+            stream.write(
+                util.binary_pack(index, values)
+            )
+            response = make_response(
+                stream.getvalue()
+            )
+            response.headers['Content-Type'] = 'application/octet-stream'
             return response
 
         @api.doc(parser=delete)

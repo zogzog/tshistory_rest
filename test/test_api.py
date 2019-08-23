@@ -317,3 +317,33 @@ def test_staircase(client):
 2015-01-02 05:00:00+00:00    5.0
 """, series)
 
+
+def test_get_fast_path(client):
+    series_in = genserie(utcdt(2018, 1, 1), 'H', 3)
+    res = client.patch('/series/state', params={
+        'name': 'test_fast',
+        'series': util.tojson(series_in),
+        'author': 'Babar',
+        'insertion_date': utcdt(2018, 1, 1, 10),
+        'tzaware': util.tzaware_serie(series_in)
+    })
+
+    assert res.status_code == 201
+
+    meta = client.get('/series/metadata', params={
+        'name': 'test_fast',
+        'all': True
+    }).json
+    out = client.get('/series/state', params={
+        'name': 'test_fast',
+        'numpy': True
+    })
+    index, values = util.binary_unpack(out.body)
+    index, values = util.numpy_deserialize(index, values, meta)
+    series = pd.Series(values, index=index)
+
+    assert_df("""
+2018-01-01 00:00:00    0.0
+2018-01-01 01:00:00    1.0
+2018-01-01 02:00:00    2.0
+""", series)
