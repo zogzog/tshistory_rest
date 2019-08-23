@@ -153,6 +153,9 @@ staircase.add_argument(
 staircase.add_argument(
     'to_value_date', type=utcdt, default=None
 )
+staircase.add_argument(
+    'mode', type=enum('json', 'numpy'), default='json'
+)
 
 
 catalog = reqparse.RequestParser()
@@ -355,14 +358,22 @@ def blueprint(engine, tshclass=tsio.timeseries):
                     from_value_date=args.from_value_date,
                     to_value_date=args.to_value_date,
                 )
+                metadata = tsh.metadata(cn, args.name)
 
-            if series is not None:
-                response = make_response(
-                    series.to_json(orient='index', date_format='iso')
-                )
-            else:
-                response = make_response('null')
-            response.headers['Content-Type'] = 'text/json'
+            if args.mode == 'json':
+                if series is not None:
+                    response = make_response(
+                        series.to_json(orient='index', date_format='iso')
+                    )
+                else:
+                    response = make_response('null')
+                response.headers['Content-Type'] = 'text/json'
+                return response
+
+            response = make_response(
+                binary_pack_meta_data(metadata, series)
+            )
+            response.headers['Content-Type'] = 'application/octet-stream'
             return response
 
     @ns.route('/catalog')

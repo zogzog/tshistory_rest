@@ -318,6 +318,29 @@ def test_staircase(client):
 2015-01-02 05:00:00+00:00    5.0
 """, series)
 
+    res = client.get('/series/staircase', params={
+        'name': 'staircase',
+        'delta': pd.Timedelta(hours=3),
+        'from_value_date': utcdt(2015, 1, 1, 4),
+        'to_value_date': utcdt(2015, 1, 2, 5),
+        'mode': 'numpy'
+    })
+    meta, data = util.binary_unpack(zlib.decompress(res.body))
+    meta = json.loads(meta)
+    index, values = util.binary_unpack(data)
+    index, values = util.numpy_deserialize(index, values, meta)
+    series = pd.Series(values, index=index)
+    series = series.tz_localize('UTC')
+
+    assert_df("""
+2015-01-01 04:00:00+00:00    4.0
+2015-01-01 05:00:00+00:00    5.0
+2015-01-01 06:00:00+00:00    6.0
+2015-01-02 03:00:00+00:00    3.0
+2015-01-02 04:00:00+00:00    4.0
+2015-01-02 05:00:00+00:00    5.0
+""", series)
+
 
 def test_get_fast_path(client):
     series_in = genserie(utcdt(2018, 1, 1), 'H', 3)
