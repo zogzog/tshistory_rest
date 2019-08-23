@@ -325,9 +325,8 @@ def test_staircase(client):
         'to_value_date': utcdt(2015, 1, 2, 5),
         'mode': 'numpy'
     })
-    meta, data = util.binary_unpack(zlib.decompress(res.body))
+    meta, index, values = util.nary_unpack(zlib.decompress(res.body))
     meta = json.loads(meta)
-    index, values = util.binary_unpack(data)
     index, values = util.numpy_deserialize(index, values, meta)
     series = pd.Series(values, index=index)
     series = series.tz_localize('UTC')
@@ -358,9 +357,8 @@ def test_get_fast_path(client):
         'name': 'test_fast',
         'mode': 'numpy'
     })
-    meta, data = util.binary_unpack(zlib.decompress(out.body))
+    meta, index, values = util.nary_unpack(zlib.decompress(out.body))
     meta = json.loads(meta)
-    index, values = util.binary_unpack(data)
     index, values = util.numpy_deserialize(index, values, meta)
     series = pd.Series(values, index=index)
     series = series.tz_localize('UTC')

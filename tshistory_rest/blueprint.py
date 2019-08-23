@@ -172,10 +172,9 @@ def binary_pack_meta_data(meta, series):
         meta['value_type'] == 'object'
     )
     bmeta = json.dumps(meta).encode('utf-8')
-    bdata = util.binary_pack(index, values)
     stream.write(
         zlib.compress(
-            util.binary_pack(bmeta, bdata)
+            util.nary_pack([bmeta, index, values])
         )
     )
     return stream.getvalue()
