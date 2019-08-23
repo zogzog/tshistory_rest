@@ -1,9 +1,34 @@
 import json
 import pandas as pd
 import zlib
+import numpy as np
+from array import array
 
 from tshistory import util
-from tshistory.testutil import utcdt, genserie, assert_df
+from tshistory.testutil import (
+    assert_df,
+    assert_hist,
+    utcdt,
+    genserie
+)
+
+
+def unpack_history(bytestring):
+    byteslist = util.nary_unpack(zlib.decompress(bytestring))
+    metadata = json.loads(byteslist[0])
+    idates = np.frombuffer(
+        array('d', byteslist[1]),
+        '|M8[ns]'
+    )
+    hist = {}
+    for idx, (bindex, bvalues) in enumerate(zip(*[iter(byteslist[2:])]*2)):
+        index, values = util.numpy_deserialize(
+            bindex, bvalues, metadata
+        )
+        hist[pd.Timestamp(idates[idx], tz='UTC')] = pd.Series(
+            values, index=index
+        )
+    return hist
 
 
 def test_no_series(client):
@@ -157,6 +182,20 @@ def test_base(client):
 2018-01-01 02:00:00                  2.0                    2
 2018-01-01 03:00:00                  NaN                    3
 """, df)
+
+    res = client.get('/series/history?name=test&mode=numpy')
+    hist = unpack_history(res.body)
+    assert_hist("""
+insertion_date             value_date         
+2018-01-01 10:00:00+00:00  2018-01-01 00:00:00    0.0
+                           2018-01-01 01:00:00    1.0
+                           2018-01-01 02:00:00    2.0
+2018-01-01 13:00:00+00:00  2018-01-01 00:00:00    0.0
+                           2018-01-01 01:00:00    1.0
+                           2018-01-01 02:00:00    2.0
+                           2018-01-01 03:00:00    3.0
+""", hist)
+
 
     # diff mode
     res = client.get('/series/history', params={

@@ -1,6 +1,7 @@
 import json
 import io
 import zlib
+from array import array
 
 import numpy as np
 import pandas as pd
@@ -141,6 +142,9 @@ history.add_argument(
 history.add_argument(
     'diffmode', type=inputs.boolean, default=False
 )
+history.add_argument(
+    'mode', type=enum('json', 'numpy'), default='json'
+)
 
 staircase = base.copy()
 staircase.add_argument(
@@ -175,6 +179,29 @@ def binary_pack_meta_data(meta, series):
     stream.write(
         zlib.compress(
             util.nary_pack([bmeta, index, values])
+        )
+    )
+    return stream.getvalue()
+
+
+def pack_history(metadata, hist):
+    byteslist = [json.dumps(metadata).encode('utf-8')]
+    byteslist.append(
+        np.array(
+            list(hist), dtype='|M8[ns]'
+        ).view(np.uint8).data.tobytes()
+    )
+    isstr = metadata['value_type'] == 'object'
+    for tstamp, series in hist.items():
+        index, values = util.numpy_serialize(
+            series,
+            isstr
+        )
+        byteslist.append(index)
+        byteslist.append(values)
+    stream = io.BytesIO(
+        zlib.compress(
+            util.nary_pack(byteslist)
         )
     )
     return stream.getvalue()
@@ -330,14 +357,22 @@ def blueprint(engine, tshclass=tsio.timeseries):
                     to_value_date=args.to_value_date,
                     diffmode=args.diffmode
                 )
+                metadata = tsh.metadata(cn, args.name)
 
-            if hist is not None:
-                response = make_response(
-                    pd.DataFrame(hist).to_json()
-                )
-            else:
-                response = make_response('null')
-            response.headers['Content-Type'] = 'text/json'
+            if args.mode == 'json':
+                if hist is not None:
+                    response = make_response(
+                        pd.DataFrame(hist).to_json()
+                    )
+                else:
+                    response = make_response('null')
+                response.headers['Content-Type'] = 'text/json'
+                return response
+
+            response = make_response(
+                pack_history(metadata, hist)
+            )
+            response.headers['Content-Type'] = 'application/octet-stream'
             return response
 
     @ns.route('/staircase')
