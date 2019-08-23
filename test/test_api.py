@@ -336,7 +336,7 @@ def test_get_fast_path(client):
     }).json
     out = client.get('/series/state', params={
         'name': 'test_fast',
-        'numpy': True
+        'mode': 'numpy'
     })
     index, values = util.binary_unpack(out.body)
     index, values = util.numpy_deserialize(index, values, meta)

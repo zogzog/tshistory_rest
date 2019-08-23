@@ -19,6 +19,17 @@ def utcdt(dtstr):
     return pd.Timestamp(dtstr)
 
 
+def enum(*enum):
+    " an enum input type "
+
+    def _str(val):
+        if val not in enum:
+            raise ValueError(f'Possible choices are in {enum}')
+        return val
+    _str.__schema__ = {'type': 'enum'}
+    return _str
+
+
 bp = Blueprint(
     'tshistory_rest',
     __name__,
@@ -96,7 +107,6 @@ put_metadata.add_argument(
     help='set new metadata for a series'
 )
 
-
 get = base.copy()
 get.add_argument(
     'insertion_date', type=utcdt, default=None,
@@ -109,7 +119,7 @@ get.add_argument(
     'to_value_date', type=utcdt, default=None
 )
 get.add_argument(
-    'numpy', type=inputs.boolean, default=False
+    'mode', type=enum('json', 'numpy'), default='json'
 )
 
 delete = base.copy()
@@ -251,7 +261,7 @@ def blueprint(engine, tshclass=tsio.timeseries):
                 # so very cheap call
                 metadata = tsh.metadata(cn, args.name)
 
-            if not args.numpy:
+            if args.mode == 'json':
                 if series is not None:
                     response = make_response(
                         series.to_json(orient='index',
