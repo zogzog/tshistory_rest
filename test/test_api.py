@@ -331,15 +331,13 @@ def test_get_fast_path(client):
 
     assert res.status_code == 201
 
-    meta = client.get('/series/metadata', params={
-        'name': 'test_fast',
-        'all': True
-    }).json
     out = client.get('/series/state', params={
         'name': 'test_fast',
         'mode': 'numpy'
     })
-    index, values = util.binary_unpack(zlib.decompress(out.body))
+    meta, data = util.binary_unpack(zlib.decompress(out.body))
+    meta = json.loads(meta)
+    index, values = util.binary_unpack(data)
     index, values = util.numpy_deserialize(index, values, meta)
     series = pd.Series(values, index=index)
     series = series.tz_localize('UTC')
@@ -349,3 +347,11 @@ def test_get_fast_path(client):
 2018-01-01 01:00:00+00:00    1.0
 2018-01-01 02:00:00+00:00    2.0
 """, series)
+
+    assert meta == {
+        'tzaware': True,
+        'index_type': 'datetime64[ns, UTC]',
+        'value_type': 'float64',
+        'index_dtype': '|M8[ns]',
+        'value_dtype': '<f8'
+    }

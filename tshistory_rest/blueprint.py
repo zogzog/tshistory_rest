@@ -279,8 +279,12 @@ def blueprint(engine, tshclass=tsio.timeseries):
                 series,
                 metadata['value_type'] == 'object'
             )
+            bmeta = json.dumps(metadata).encode('utf-8')
+            bdata = util.binary_pack(index, values)
             stream.write(
-                zlib.compress(util.binary_pack(index, values))
+                zlib.compress(
+                    util.binary_pack(bmeta, bdata)
+                )
             )
             response = make_response(
                 stream.getvalue()
