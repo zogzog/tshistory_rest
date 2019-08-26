@@ -165,7 +165,7 @@ def test_base(client):
 2018-01-01 03:00:00                  NaN                    3
 """, df)
 
-    res = client.get('/series/history?name=test&format=numpy')
+    res = client.get('/series/history?name=test&format=tshpack')
     meta, hist = util.unpack_history(res.body)
     assert_hist("""
 insertion_date             value_date         
@@ -344,7 +344,7 @@ def test_staircase(client):
         'delta': pd.Timedelta(hours=3),
         'from_value_date': utcdt(2015, 1, 1, 4),
         'to_value_date': utcdt(2015, 1, 2, 5),
-        'format': 'numpy'
+        'format': 'tshpack'
     })
     meta, index, values = util.nary_unpack(zlib.decompress(res.body))
     meta = json.loads(meta)
@@ -376,7 +376,7 @@ def test_get_fast_path(client):
 
     out = client.get('/series/state', params={
         'name': 'test_fast',
-        'format': 'numpy'
+        'format': 'tshpack'
     })
     meta, index, values = util.nary_unpack(zlib.decompress(out.body))
     meta = json.loads(meta)

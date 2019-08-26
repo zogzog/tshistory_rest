@@ -121,7 +121,7 @@ get.add_argument(
     'to_value_date', type=utcdt, default=None
 )
 get.add_argument(
-    'format', type=enum('json', 'numpy'), default='json'
+    'format', type=enum('json', 'tshpack'), default='json'
 )
 
 delete = base.copy()
@@ -143,7 +143,7 @@ history.add_argument(
     'diffmode', type=inputs.boolean, default=False
 )
 history.add_argument(
-    'format', type=enum('json', 'numpy'), default='json'
+    'format', type=enum('json', 'tshpack'), default='json'
 )
 
 staircase = base.copy()
@@ -158,7 +158,7 @@ staircase.add_argument(
     'to_value_date', type=utcdt, default=None
 )
 staircase.add_argument(
-    'format', type=enum('json', 'numpy'), default='json'
+    'format', type=enum('json', 'tshpack'), default='json'
 )
 
 
