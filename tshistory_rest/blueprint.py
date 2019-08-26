@@ -178,7 +178,7 @@ def binary_pack_meta_data(meta, series):
     bmeta = json.dumps(meta).encode('utf-8')
     stream.write(
         zlib.compress(
-            util.nary_pack([bmeta, index, values])
+            util.nary_pack(bmeta, index, values)
         )
     )
     return stream.getvalue()
@@ -201,7 +201,7 @@ def pack_history(metadata, hist):
         byteslist.append(values)
     stream = io.BytesIO(
         zlib.compress(
-            util.nary_pack(byteslist)
+            util.nary_pack(*byteslist)
         )
     )
     return stream.getvalue()
