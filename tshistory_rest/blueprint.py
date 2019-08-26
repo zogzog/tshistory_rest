@@ -121,7 +121,7 @@ get.add_argument(
     'to_value_date', type=utcdt, default=None
 )
 get.add_argument(
-    'mode', type=enum('json', 'numpy'), default='json'
+    'format', type=enum('json', 'numpy'), default='json'
 )
 
 delete = base.copy()
@@ -143,7 +143,7 @@ history.add_argument(
     'diffmode', type=inputs.boolean, default=False
 )
 history.add_argument(
-    'mode', type=enum('json', 'numpy'), default='json'
+    'format', type=enum('json', 'numpy'), default='json'
 )
 
 staircase = base.copy()
@@ -158,7 +158,7 @@ staircase.add_argument(
     'to_value_date', type=utcdt, default=None
 )
 staircase.add_argument(
-    'mode', type=enum('json', 'numpy'), default='json'
+    'format', type=enum('json', 'numpy'), default='json'
 )
 
 
@@ -283,7 +283,7 @@ def blueprint(engine, tshclass=tsio.timeseries):
                 # so very cheap call
                 metadata = tsh.metadata(cn, args.name)
 
-            if args.mode == 'json':
+            if args.format == 'json':
                 if series is not None:
                     response = make_response(
                         series.to_json(orient='index',
@@ -336,7 +336,7 @@ def blueprint(engine, tshclass=tsio.timeseries):
                 )
                 metadata = tsh.metadata(cn, args.name)
 
-            if args.mode == 'json':
+            if args.format == 'json':
                 if hist is not None:
                     response = make_response(
                         pd.DataFrame(hist).to_json()
@@ -371,7 +371,7 @@ def blueprint(engine, tshclass=tsio.timeseries):
                 )
                 metadata = tsh.metadata(cn, args.name)
 
-            if args.mode == 'json':
+            if args.format == 'json':
                 if series is not None:
                     response = make_response(
                         series.to_json(orient='index', date_format='iso')
