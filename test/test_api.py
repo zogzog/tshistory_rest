@@ -13,24 +13,6 @@ from tshistory.testutil import (
 )
 
 
-def unpack_history(bytestring):
-    byteslist = util.nary_unpack(zlib.decompress(bytestring))
-    metadata = json.loads(byteslist[0])
-    idates = np.frombuffer(
-        array('d', byteslist[1]),
-        '|M8[ns]'
-    )
-    hist = {}
-    for idx, (bindex, bvalues) in enumerate(zip(*[iter(byteslist[2:])]*2)):
-        index, values = util.numpy_deserialize(
-            bindex, bvalues, metadata
-        )
-        hist[pd.Timestamp(idates[idx], tz='UTC')] = pd.Series(
-            values, index=index
-        )
-    return hist
-
-
 def test_no_series(client):
     res = client.get('/series/state?name=no-such-series')
     assert res.status_code == 404
@@ -184,7 +166,7 @@ def test_base(client):
 """, df)
 
     res = client.get('/series/history?name=test&mode=numpy')
-    hist = unpack_history(res.body)
+    meta, hist = util.unpack_history(res.body)
     assert_hist("""
 insertion_date             value_date         
 2018-01-01 10:00:00+00:00  2018-01-01 00:00:00    0.0

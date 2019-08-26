@@ -184,29 +184,6 @@ def binary_pack_meta_data(meta, series):
     return stream.getvalue()
 
 
-def pack_history(metadata, hist):
-    byteslist = [json.dumps(metadata).encode('utf-8')]
-    byteslist.append(
-        np.array(
-            list(hist), dtype='|M8[ns]'
-        ).view(np.uint8).data.tobytes()
-    )
-    isstr = metadata['value_type'] == 'object'
-    for tstamp, series in hist.items():
-        index, values = util.numpy_serialize(
-            series,
-            isstr
-        )
-        byteslist.append(index)
-        byteslist.append(values)
-    stream = io.BytesIO(
-        zlib.compress(
-            util.nary_pack(*byteslist)
-        )
-    )
-    return stream.getvalue()
-
-
 def blueprint(engine, tshclass=tsio.timeseries):
 
     @ns.route('/metadata')
@@ -370,7 +347,7 @@ def blueprint(engine, tshclass=tsio.timeseries):
                 return response
 
             response = make_response(
-                pack_history(metadata, hist)
+                util.pack_history(metadata, hist)
             )
             response.headers['Content-Type'] = 'application/octet-stream'
             return response
