@@ -91,6 +91,11 @@ update.add_argument(
     'metadata', type=str, default=None,
     help='metadata associated with this insertion'
 )
+update.add_argument(
+    'replace', type=bool, default=False,
+    help='replace the current series entirely with the provided series '
+    '(no update semantics)'
+)
 
 rename = base.copy()
 rename.add_argument(
@@ -239,11 +244,18 @@ def blueprint(engine, tshclass=tsio.timeseries):
 
             with engine.begin() as cn:
                 exists = tsh.exists(cn, args.name)
-                tsh.update(
-                    cn, series, args.name, args.author,
-                    metadata=args.metadata,
-                    insertion_date=args.insertion_date
-                )
+                if args.replace:
+                    tsh.replace(
+                        cn, series, args.name, args.author,
+                        metadata=args.metadata,
+                        insertion_date=args.insertion_date
+                    )
+                else:
+                    tsh.update(
+                        cn, series, args.name, args.author,
+                        metadata=args.metadata,
+                        insertion_date=args.insertion_date
+                    )
 
             return '', 200 if exists else 201
 

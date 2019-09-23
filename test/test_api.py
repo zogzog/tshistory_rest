@@ -244,6 +244,26 @@ insertion_date             value_date
         '2018-01-01T02:00:00.000Z': 2.0
     }
 
+    series_in = genserie(utcdt(2019, 1, 1), 'H', 3)
+    res = client.patch('/series/state', params={
+        'name': 'test',
+        'series': util.tojson(series_in),
+        'author': 'Babar',
+        'insertion_date': utcdt(2018, 1, 2),
+        'tzaware': util.tzaware_serie(series_in),
+        'replace': True
+    })
+
+    assert res.status_code == 200
+    res = client.get('/series/state', params={
+        'name': 'test'
+    })
+    assert res.json == {
+        '2019-01-01T00:00:00.000Z': 0.0,
+        '2019-01-01T01:00:00.000Z': 1.0,
+        '2019-01-01T02:00:00.000Z': 2.0
+    }
+
 
 def test_delete(client):
     series_in = genserie(utcdt(2018, 1, 1), 'H', 3)
