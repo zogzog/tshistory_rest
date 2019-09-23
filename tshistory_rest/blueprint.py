@@ -70,24 +70,24 @@ base.add_argument(
     help='timeseries name'
 )
 
-insert = base.copy()
-insert.add_argument(
+update = base.copy()
+update.add_argument(
     'series', type=str, required=True,
     help='json representation of the series'
 )
-insert.add_argument(
+update.add_argument(
     'author', type=str, required=True,
     help='author of the insertion'
 )
-insert.add_argument(
+update.add_argument(
     'insertion_date', type=utcdt, default=None,
     help='insertion date can be forced'
 )
-insert.add_argument(
+update.add_argument(
     'tzaware', type=inputs.boolean, default=True,
     help='tzaware series'
 )
-insert.add_argument(
+update.add_argument(
     'metadata', type=str, default=None,
     help='metadata associated with this insertion'
 )
@@ -227,9 +227,9 @@ def blueprint(engine, tshclass=tsio.timeseries):
     @ns.route('/state')
     class timeseries_state(Resource):
 
-        @api.doc(parser=insert)
+        @api.doc(parser=update)
         def patch(self):
-            args = insert.parse_args()
+            args = update.parse_args()
             tsh = tshclass(namespace=args.namespace)
             series = util.fromjson(args.series, args.name)
             if args.tzaware:
@@ -239,7 +239,7 @@ def blueprint(engine, tshclass=tsio.timeseries):
 
             with engine.begin() as cn:
                 exists = tsh.exists(cn, args.name)
-                tsh.insert(
+                tsh.update(
                     cn, series, args.name, args.author,
                     metadata=args.metadata,
                     insertion_date=args.insertion_date
