@@ -62,10 +62,6 @@ ns = api.namespace(
 base = reqparse.RequestParser()
 
 base.add_argument(
-    'namespace', type=str, default='tsh',
-    help='timeseries store namespace'
-)
-base.add_argument(
     'name', type=str, required=True,
     help='timeseries name'
 )
@@ -168,10 +164,6 @@ staircase.add_argument(
 
 
 catalog = reqparse.RequestParser()
-catalog.add_argument(
-    'namespace', type=str, default='tsh',
-    help='timeseries store namespace'
-)
 
 
 def binary_pack_meta_data(meta, series):
@@ -189,7 +181,14 @@ def binary_pack_meta_data(meta, series):
     return stream.getvalue()
 
 
-def blueprint(uri, namespace='tsh', tshclass=tsapi.timeseries):
+def blueprint(uri,
+              namespace='tsh',
+              tshclass=tsapi.multisourcetimeseries,
+              sources=()):
+
+    tsa = tshclass(uri, namespace)
+    for sourceuri, sourcens in sources:
+        tsa.addsource(sourceuri, sourcens)
 
     @ns.route('/metadata')
     class timeseries_metadata(Resource):
@@ -197,25 +196,25 @@ def blueprint(uri, namespace='tsh', tshclass=tsapi.timeseries):
         @api.doc(parser=metadata)
         def get(self):
             args = metadata.parse_args()
-            tsa = tshclass(uri, args.namespace)
-
             if not tsa.exists(args.name):
                 api.abort(404, f'`{args.name}` does not exists')
 
             meta = tsa.metadata(args.name, all=args.all)
-
             return meta, 200
 
         @api.doc(parser=put_metadata)
         def put(self):
             args = put_metadata.parse_args()
-            tsa = tshclass(uri, args.namespace)
-
             if not tsa.exists(args.name):
                 api.abort(404, f'`{args.name}` does not exists')
 
             metadata = json.loads(args.metadata)
-            tsa.update_metadata(args.name, metadata)
+            try:
+                tsa.update_metadata(args.name, metadata)
+            except ValueError as err:
+                if err.args[0].startswith('not allowed to'):
+                    api.abort(405, err.args[0])
+                raise
 
             return '', 200
 
@@ -226,7 +225,6 @@ def blueprint(uri, namespace='tsh', tshclass=tsapi.timeseries):
         @api.doc(parser=update)
         def patch(self):
             args = update.parse_args()
-            tsa = tshclass(uri, args.namespace)
             series = util.fromjson(args.series, args.name)
             if args.tzaware:
                 # pandas to_json converted to utc
@@ -234,32 +232,40 @@ def blueprint(uri, namespace='tsh', tshclass=tsapi.timeseries):
                 series.index = series.index.tz_localize('utc')
 
             exists = tsa.exists(args.name)
-            if args.replace:
-                tsa.replace(
-                    series, args.name, args.author,
-                    metadata=args.metadata,
-                    insertion_date=args.insertion_date
-                )
-            else:
-                tsa.update(
-                    series, args.name, args.author,
-                    metadata=args.metadata,
-                    insertion_date=args.insertion_date
-                )
+            try:
+                if args.replace:
+                    tsa.replace(
+                        series, args.name, args.author,
+                        metadata=args.metadata,
+                        insertion_date=args.insertion_date
+                    )
+                else:
+                    tsa.update(
+                        series, args.name, args.author,
+                        metadata=args.metadata,
+                        insertion_date=args.insertion_date
+                    )
+            except ValueError as err:
+                if err.args[0].startswith('not allowed to'):
+                    api.abort(405, err.args[0])
+                raise
 
             return '', 200 if exists else 201
 
         @api.doc(parser=rename)
         def put(self):
             args = rename.parse_args()
-            tsa = tshclass(uri, args.namespace)
-
             if not tsa.exists(args.name):
                 api.abort(404, f'`{args.name}` does not exists')
             if tsa.exists(args.newname):
                 api.abort(409, f'`{args.newname}` does exists')
 
-            tsa.rename(args.name, args.newname)
+            try:
+                tsa.rename(args.name, args.newname)
+            except ValueError as err:
+                if err.args[0].startswith('not allowed to'):
+                    api.abort(405, err.args[0])
+                raise
 
             # should be a 204 but https://github.com/flask-restful/flask-restful/issues/736
             return '', 200
@@ -267,8 +273,6 @@ def blueprint(uri, namespace='tsh', tshclass=tsapi.timeseries):
         @api.doc(parser=get)
         def get(self):
             args = get.parse_args()
-            tsa = tshclass(uri, args.namespace)
-
             if not tsa.exists(args.name):
                 api.abort(404, f'`{args.name}` does not exists')
 
@@ -303,12 +307,15 @@ def blueprint(uri, namespace='tsh', tshclass=tsapi.timeseries):
         @api.doc(parser=delete)
         def delete(self):
             args = delete.parse_args()
-            tsa = tshclass(uri, args.namespace)
-
             if not tsa.exists(args.name):
                 api.abort(404, f'`{args.name}` does not exists')
 
-            tsa.delete(args.name)
+            try:
+                tsa.delete(args.name)
+            except ValueError as err:
+                if err.args[0].startswith('not allowed to'):
+                    api.abort(405, err.args[0])
+                raise
 
             # should be a 204 but https://github.com/flask-restful/flask-restful/issues/736
             return args.name, 200
@@ -319,8 +326,6 @@ def blueprint(uri, namespace='tsh', tshclass=tsapi.timeseries):
         @api.doc(parser=history)
         def get(self):
             args = history.parse_args()
-            tsa = tshclass(uri, args.namespace)
-
             if not tsa.exists(args.name):
                 api.abort(404, f'`{args.name}` does not exists')
 
@@ -356,8 +361,6 @@ def blueprint(uri, namespace='tsh', tshclass=tsapi.timeseries):
         @api.doc(parser=staircase)
         def get(self):
             args = staircase.parse_args()
-            tsa = tshclass(uri, args.namespace)
-
             if not tsa.exists(args.name):
                 api.abort(404, f'`{args.name}` does not exists')
 
@@ -390,8 +393,6 @@ def blueprint(uri, namespace='tsh', tshclass=tsapi.timeseries):
         @api.doc(parser=catalog)
         def get(self):
             args = catalog.parse_args()
-            tsa = tshclass(uri, args.namespace)
-
             return tsa.catalog()
 
     return bp

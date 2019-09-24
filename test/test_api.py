@@ -4,7 +4,7 @@ import zlib
 import numpy as np
 from array import array
 
-from tshistory import util
+from tshistory import util, tsio
 from tshistory.testutil import (
     assert_df,
     assert_hist,
@@ -416,4 +416,110 @@ def test_get_fast_path(client):
         'value_type': 'float64',
         'index_dtype': '|M8[ns]',
         'value_dtype': '<f8'
+    }
+
+
+def test_multisource(client, engine):
+    series = genserie(utcdt(2020, 1, 1), 'D', 3)
+    res = client.patch('/series/state', params={
+        'name': 'test-multi',
+        'series': util.tojson(series),
+        'author': 'Babar',
+        'insertion_date': utcdt(2018, 1, 1, 10),
+        'tzaware': util.tzaware_serie(series)
+    })
+
+    assert res.status_code == 201
+
+    tsh = tsio.timeseries('other')
+    tsh.insert(
+        engine,
+        series,
+        'test-other-source',
+        'Babar'
+    )
+
+    out = client.get('/series/state', params={
+        'name': 'test-multi',
+    })
+    assert out.json == {
+        '2020-01-01T00:00:00.000Z': 0.0,
+        '2020-01-02T00:00:00.000Z': 1.0,
+        '2020-01-03T00:00:00.000Z': 2.0
+    }
+
+    out = client.get('/series/state', params={
+        'name': 'test-other-source',
+    })
+    assert out.json == {
+        '2020-01-01T00:00:00.000Z': 0.0,
+        '2020-01-02T00:00:00.000Z': 1.0,
+        '2020-01-03T00:00:00.000Z': 2.0
+    }
+
+    res = client.patch('/series/state', params={
+        'name': 'test-multi',
+        'series': util.tojson(series),
+        'author': 'Babar',
+        'insertion_date': utcdt(2018, 1, 1, 10),
+        'tzaware': util.tzaware_serie(series)
+    })
+    assert res.status_code == 200
+
+    res = client.patch('/series/state', params={
+        'name': 'test-other-source',
+        'series': util.tojson(series),
+        'author': 'Babar',
+        'insertion_date': utcdt(2018, 1, 1, 10),
+        'tzaware': util.tzaware_serie(series)
+    })
+    assert res.status_code == 405
+    assert res.json == {'message': 'not allowed to update to a secondary source'}
+
+    res = client.get('/series/metadata?name=test-other-source', params={
+        'all': True
+    })
+    meta = res.json
+    assert meta == {
+        'tzaware': True,
+        'index_type': 'datetime64[ns, UTC]',
+        'value_type': 'float64',
+        'index_dtype': '|M8[ns]',
+        'value_dtype': '<f8'
+    }
+
+    res = client.put('/series/metadata', params={
+        'metadata': json.dumps({
+            'description': 'banana spot price'
+        }),
+        'name': 'test-other-source'
+    })
+    assert res.status_code == 405
+    assert res.json == {
+        'message': 'not allowed to update metadata to a secondary source'
+    }
+
+    res = client.delete('/series/state', params={
+        'name': 'test-other-source'
+    })
+    assert res.status_code == 405
+    assert res.json == {
+        'message': 'not allowed to delete to a secondary source'
+    }
+
+    res = client.delete('/series/state', params={
+        'name': 'test-other-source'
+    })
+    assert res.status_code == 405
+    assert res.json == {
+        'message': 'not allowed to delete to a secondary source'
+    }
+
+    res = client.put('/series/state', params={
+        'name': 'test-other-source',
+        'newname': 'test2-other-source'
+    })
+    assert res.status_code == 405
+    assert res.json == {
+        'message': 'not allowed to rename to a secondary source'
     }
