@@ -14,7 +14,7 @@ from flask_restplus import (
     reqparse
 )
 
-from tshistory import tsio, util
+from tshistory import api as tsapi, util
 
 
 def utcdt(dtstr):
@@ -189,7 +189,7 @@ def binary_pack_meta_data(meta, series):
     return stream.getvalue()
 
 
-def blueprint(engine, tshclass=tsio.timeseries):
+def blueprint(uri, namespace='tsh', tshclass=tsapi.timeseries):
 
     @ns.route('/metadata')
     class timeseries_metadata(Resource):
@@ -197,34 +197,25 @@ def blueprint(engine, tshclass=tsio.timeseries):
         @api.doc(parser=metadata)
         def get(self):
             args = metadata.parse_args()
-            tsh = tshclass(namespace=args.namespace)
+            tsa = tshclass(uri, args.namespace)
 
-            if not tsh.exists(engine, args.name):
+            if not tsa.exists(args.name):
                 api.abort(404, f'`{args.name}` does not exists')
 
-            with engine.begin() as cn:
-                meta = tsh.metadata(cn, args.name)
-
-            # remove internal if asked
-            if not args.all:
-                meta = {
-                    key: val for key, val in meta.items()
-                    if key not in tsh.metakeys
-                }
+            meta = tsa.metadata(args.name, all=args.all)
 
             return meta, 200
 
         @api.doc(parser=put_metadata)
         def put(self):
             args = put_metadata.parse_args()
-            tsh = tshclass(namespace=args.namespace)
+            tsa = tshclass(uri, args.namespace)
 
-            if not tsh.exists(engine, args.name):
+            if not tsa.exists(args.name):
                 api.abort(404, f'`{args.name}` does not exists')
 
             metadata = json.loads(args.metadata)
-            with engine.begin() as cn:
-                tsh.update_metadata(cn, args.name, metadata)
+            tsa.update_metadata(args.name, metadata)
 
             return '', 200
 
@@ -235,42 +226,40 @@ def blueprint(engine, tshclass=tsio.timeseries):
         @api.doc(parser=update)
         def patch(self):
             args = update.parse_args()
-            tsh = tshclass(namespace=args.namespace)
+            tsa = tshclass(uri, args.namespace)
             series = util.fromjson(args.series, args.name)
             if args.tzaware:
                 # pandas to_json converted to utc
                 # and dropped the offset
                 series.index = series.index.tz_localize('utc')
 
-            with engine.begin() as cn:
-                exists = tsh.exists(cn, args.name)
-                if args.replace:
-                    tsh.replace(
-                        cn, series, args.name, args.author,
-                        metadata=args.metadata,
-                        insertion_date=args.insertion_date
-                    )
-                else:
-                    tsh.update(
-                        cn, series, args.name, args.author,
-                        metadata=args.metadata,
-                        insertion_date=args.insertion_date
-                    )
+            exists = tsa.exists(args.name)
+            if args.replace:
+                tsa.replace(
+                    series, args.name, args.author,
+                    metadata=args.metadata,
+                    insertion_date=args.insertion_date
+                )
+            else:
+                tsa.update(
+                    series, args.name, args.author,
+                    metadata=args.metadata,
+                    insertion_date=args.insertion_date
+                )
 
             return '', 200 if exists else 201
 
         @api.doc(parser=rename)
         def put(self):
             args = rename.parse_args()
-            tsh = tshclass(namespace=args.namespace)
+            tsa = tshclass(uri, args.namespace)
 
-            if not tsh.exists(engine, args.name):
+            if not tsa.exists(args.name):
                 api.abort(404, f'`{args.name}` does not exists')
-            if tsh.exists(engine, args.newname):
+            if tsa.exists(args.newname):
                 api.abort(409, f'`{args.newname}` does exists')
 
-            with engine.begin() as cn:
-                tsh.rename(cn, args.name, args.newname)
+            tsa.rename(args.name, args.newname)
 
             # should be a 204 but https://github.com/flask-restful/flask-restful/issues/736
             return '', 200
@@ -278,22 +267,21 @@ def blueprint(engine, tshclass=tsio.timeseries):
         @api.doc(parser=get)
         def get(self):
             args = get.parse_args()
-            tsh = tshclass(namespace=args.namespace)
+            tsa = tshclass(uri, args.namespace)
 
-            if not tsh.exists(engine, args.name):
+            if not tsa.exists(args.name):
                 api.abort(404, f'`{args.name}` does not exists')
 
-            with engine.begin() as cn:
-                series = tsh.get(
-                    cn, args.name,
-                    revision_date=args.insertion_date,
-                    from_value_date=args.from_value_date,
-                    to_value_date=args.to_value_date
-                )
-                # the fast path will need it
-                # also it is read from a cache filled at get time
-                # so very cheap call
-                metadata = tsh.metadata(cn, args.name)
+            series = tsa.get(
+                args.name,
+                revision_date=args.insertion_date,
+                from_value_date=args.from_value_date,
+                to_value_date=args.to_value_date
+            )
+            # the fast path will need it
+            # also it is read from a cache filled at get time
+            # so very cheap call
+            metadata = tsa.metadata(args.name, all=True)
 
             if args.format == 'json':
                 if series is not None:
@@ -315,13 +303,12 @@ def blueprint(engine, tshclass=tsio.timeseries):
         @api.doc(parser=delete)
         def delete(self):
             args = delete.parse_args()
-            tsh = tshclass(namespace=args.namespace)
+            tsa = tshclass(uri, args.namespace)
 
-            if not tsh.exists(engine, args.name):
+            if not tsa.exists(args.name):
                 api.abort(404, f'`{args.name}` does not exists')
 
-            with engine.begin() as cn:
-                tsh.delete(cn, args.name)
+            tsa.delete(args.name)
 
             # should be a 204 but https://github.com/flask-restful/flask-restful/issues/736
             return args.name, 200
@@ -332,21 +319,20 @@ def blueprint(engine, tshclass=tsio.timeseries):
         @api.doc(parser=history)
         def get(self):
             args = history.parse_args()
-            tsh = tshclass(namespace=args.namespace)
+            tsa = tshclass(uri, args.namespace)
 
-            if not tsh.exists(engine, args.name):
+            if not tsa.exists(args.name):
                 api.abort(404, f'`{args.name}` does not exists')
 
-            with engine.begin() as cn:
-                hist = tsh.history(
-                    cn, args.name,
-                    from_insertion_date=args.from_insertion_date,
-                    to_insertion_date=args.to_insertion_date,
-                    from_value_date=args.from_value_date,
-                    to_value_date=args.to_value_date,
-                    diffmode=args.diffmode
-                )
-                metadata = tsh.metadata(cn, args.name)
+            hist = tsa.history(
+                args.name,
+                from_insertion_date=args.from_insertion_date,
+                to_insertion_date=args.to_insertion_date,
+                from_value_date=args.from_value_date,
+                to_value_date=args.to_value_date,
+                diffmode=args.diffmode
+            )
+            metadata = tsa.metadata(args.name, all=True)
 
             if args.format == 'json':
                 if hist is not None:
@@ -370,18 +356,17 @@ def blueprint(engine, tshclass=tsio.timeseries):
         @api.doc(parser=staircase)
         def get(self):
             args = staircase.parse_args()
-            tsh = tshclass(namespace=args.namespace)
+            tsa = tshclass(uri, args.namespace)
 
-            if not tsh.exists(engine, args.name):
+            if not tsa.exists(args.name):
                 api.abort(404, f'`{args.name}` does not exists')
 
-            with engine.begin() as cn:
-                series = tsh.staircase(
-                    cn, args.name, delta=args.delta,
-                    from_value_date=args.from_value_date,
-                    to_value_date=args.to_value_date,
-                )
-                metadata = tsh.metadata(cn, args.name)
+            series = tsa.staircase(
+                args.name, delta=args.delta,
+                from_value_date=args.from_value_date,
+                to_value_date=args.to_value_date,
+            )
+            metadata = tsa.metadata(args.name, all=True)
 
             if args.format == 'json':
                 if series is not None:
@@ -405,10 +390,9 @@ def blueprint(engine, tshclass=tsio.timeseries):
         @api.doc(parser=catalog)
         def get(self):
             args = catalog.parse_args()
-            tsh = tshclass(namespace=args.namespace)
+            tsa = tshclass(uri, args.namespace)
 
-            with engine.begin() as cn:
-                return tsh.list_series(cn)
+            return tsa.catalog()
 
     return bp
 

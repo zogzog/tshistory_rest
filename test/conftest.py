@@ -39,5 +39,5 @@ class WebTester(webtest.TestApp):
 
 @pytest.fixture(scope='session')
 def client(engine):
-    wsgi = app.make_app(engine)
+    wsgi = app.make_app(engine.url)
     yield WebTester(wsgi)
