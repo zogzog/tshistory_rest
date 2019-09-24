@@ -235,13 +235,13 @@ def blueprint(uri,
             try:
                 if args.replace:
                     tsa.replace(
-                        series, args.name, args.author,
+                        args.name, series, args.author,
                         metadata=args.metadata,
                         insertion_date=args.insertion_date
                     )
                 else:
                     tsa.update(
-                        series, args.name, args.author,
+                        args.name, series, args.author,
                         metadata=args.metadata,
                         insertion_date=args.insertion_date
                     )
