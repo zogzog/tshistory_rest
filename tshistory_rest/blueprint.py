@@ -14,7 +14,7 @@ from flask_restplus import (
     reqparse
 )
 
-from tshistory import api as tsapi, util
+from tshistory import api as tsapi, util, tsio
 
 
 def utcdt(dtstr):
@@ -183,10 +183,11 @@ def binary_pack_meta_data(meta, series):
 
 def blueprint(uri,
               namespace='tsh',
-              tshclass=tsapi.multisourcetimeseries,
+              apiclass=tsapi.multisourcetimeseries,
+              tshclass=tsio.timeseries,
               sources=()):
 
-    tsa = tshclass(uri, namespace)
+    tsa = apiclass(uri, namespace, tshclass)
     for sourceuri, sourcens in sources:
         tsa.addsource(sourceuri, sourcens)
 
