@@ -21,6 +21,12 @@ def utcdt(dtstr):
     return pd.Timestamp(dtstr)
 
 
+def todict(dictstr):
+    if dictstr is None:
+        return None
+    return json.loads(dictstr)
+
+
 def enum(*enum):
     " an enum input type "
 
@@ -84,7 +90,7 @@ update.add_argument(
     help='tzaware series'
 )
 update.add_argument(
-    'metadata', type=str, default=None,
+    'metadata', type=todict, default=None,
     help='metadata associated with this insertion'
 )
 update.add_argument(
