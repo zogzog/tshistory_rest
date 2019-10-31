@@ -88,7 +88,7 @@ update.add_argument(
     help='metadata associated with this insertion'
 )
 update.add_argument(
-    'replace', type=bool, default=False,
+    'replace', type=inputs.boolean, default=False,
     help='replace the current series entirely with the provided series '
     '(no update semantics)'
 )
