@@ -15,7 +15,7 @@ setup(name='tshistory_rest',
           'requests',
           'pytest_sa_pg',
           'webtest',
-          'pandas < 0.25'
+          'pandas'
       ],
       classifiers=[
           'Development Status :: 4 - Beta',

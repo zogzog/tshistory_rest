@@ -232,12 +232,7 @@ def blueprint(uri,
         @api.doc(parser=update)
         def patch(self):
             args = update.parse_args()
-            series = util.fromjson(args.series, args.name)
-            if args.tzaware:
-                # pandas to_json converted to utc
-                # and dropped the offset
-                series.index = series.index.tz_localize('utc')
-
+            series = util.fromjson(args.series, args.name, args.tzaware)
             exists = tsa.exists(args.name)
             try:
                 if args.replace:
