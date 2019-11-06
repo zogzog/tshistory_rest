@@ -110,6 +110,12 @@ metadata.add_argument(
     'all', type=inputs.boolean, default=False,
     help='get all metadata, including internal'
 )
+metadata.add_argument(
+    'type', type=enum('standard', 'type', 'interval'),
+    default='standard',
+    help='specify the kind of needed metadata'
+)
+
 put_metadata = base.copy()
 put_metadata.add_argument(
     'metadata', type=str, required=True,
@@ -206,8 +212,19 @@ def blueprint(uri,
             if not tsa.exists(args.name):
                 api.abort(404, f'`{args.name}` does not exists')
 
-            meta = tsa.metadata(args.name, all=args.all)
-            return meta, 200
+            if args.type == 'standard':
+                meta = tsa.metadata(args.name, all=args.all)
+                return meta, 200
+            elif args.type == 'type':
+                stype = tsa.type(args.name)
+                return stype, 200
+            else:
+                assert args.type == 'interval'
+                ival = tsa.interval(args.name)
+                tzaware = tsa.metadata(args.name, all=True).get('tzaware', False)
+                return (tzaware,
+                        ival.left.isoformat(),
+                        ival.right.isoformat()), 200
 
         @api.doc(parser=put_metadata)
         def put(self):

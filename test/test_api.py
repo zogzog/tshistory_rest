@@ -264,6 +264,22 @@ insertion_date             value_date
         '2019-01-01T02:00:00.000Z': 2.0
     }
 
+    res = client.get('/series/metadata', params={
+        'name': 'test',
+        'type': 'interval'
+    })
+    assert res.json == [
+        True,
+        '2019-01-01T00:00:00+00:00',
+        '2019-01-01T02:00:00+00:00'
+    ]
+
+    res = client.get('/series/metadata', params={
+        'name': 'test',
+        'type': 'type'
+    })
+    assert res.json == 'primary'
+
 
 def test_delete(client):
     series_in = genserie(utcdt(2018, 1, 1), 'H', 3)
