@@ -43,6 +43,36 @@ def test_no_series(client):
     }
 
 
+def test_naive(client):
+    series_in = genserie(pd.Timestamp('2018-1-1'), 'H', 3)
+    res = client.patch('/series/state', params={
+        'name': 'test-naive',
+        'series': util.tojson(series_in),
+        'author': 'Babar',
+        'insertion_date': utcdt(2018, 1, 1, 10),
+        'tzaware': util.tzaware_serie(series_in)
+    })
+
+    assert res.status_code == 201
+    res = client.get('/series/metadata?name=test-naive&all=1')
+    meta = res.json
+    assert meta == {
+        'index_dtype': '|M8[ns]',
+        'index_type': 'datetime64[ns, UTC]',
+        'tzaware': True,
+        'value_dtype': '<f8',
+        'value_type': 'float64'
+    }
+
+    res = client.get('/series/state?name=test-naive')
+    series = util.fromjson(res.body, 'test', meta['tzaware'])
+    assert_df("""
+2018-01-01 00:00:00+00:00    0.0
+2018-01-01 01:00:00+00:00    1.0
+2018-01-01 02:00:00+00:00    2.0
+""", series)
+
+
 def test_base(client):
     # insert
     series_in = genserie(utcdt(2018, 1, 1), 'H', 3)
@@ -59,7 +89,7 @@ def test_base(client):
     # catalog
     res = client.get('/series/catalog')
     assert res.status_code == 200
-    assert res.json == {'test': 'primary'}
+    assert res.json['test'] == 'primary'
 
     # metadata
     res = client.get('/series/metadata?name=test')
@@ -323,9 +353,8 @@ def test_rename(client):
     })
     assert res.status_code == 200
     res = client.get('/series/catalog')
-    assert res.json == {
-        'test2': 'primary'
-    }
+    assert res.json['test2'] == 'primary'
+    assert 'test' not in res.json
 
     res = client.patch('/series/state', params={
         'name': 'test3',
