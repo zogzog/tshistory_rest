@@ -57,9 +57,9 @@ def test_naive(client):
     res = client.get('/series/metadata?name=test-naive&all=1')
     meta = res.json
     assert meta == {
-        'index_dtype': '|M8[ns]',
-        'index_type': 'datetime64[ns, UTC]',
-        'tzaware': True,
+        'index_dtype': '<M8[ns]',
+        'index_type': 'datetime64[ns]',
+        'tzaware': False,
         'value_dtype': '<f8',
         'value_type': 'float64'
     }
@@ -67,9 +67,9 @@ def test_naive(client):
     res = client.get('/series/state?name=test-naive')
     series = util.fromjson(res.body, 'test', meta['tzaware'])
     assert_df("""
-2018-01-01 00:00:00+00:00    0.0
-2018-01-01 01:00:00+00:00    1.0
-2018-01-01 02:00:00+00:00    2.0
+2018-01-01 00:00:00    0.0
+2018-01-01 01:00:00    1.0
+2018-01-01 02:00:00    2.0
 """, series)
 
 
