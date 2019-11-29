@@ -206,7 +206,7 @@ def blueprint(uri,
     @ns.route('/metadata')
     class timeseries_metadata(Resource):
 
-        @api.doc(parser=metadata)
+        @api.expect(metadata)
         def get(self):
             args = metadata.parse_args()
             if not tsa.exists(args.name):
@@ -226,7 +226,7 @@ def blueprint(uri,
                         ival.left.isoformat(),
                         ival.right.isoformat()), 200
 
-        @api.doc(parser=put_metadata)
+        @api.expect(put_metadata)
         def put(self):
             args = put_metadata.parse_args()
             if not tsa.exists(args.name):
@@ -246,7 +246,7 @@ def blueprint(uri,
     @ns.route('/state')
     class timeseries_state(Resource):
 
-        @api.doc(parser=update)
+        @api.expect(update)
         def patch(self):
             args = update.parse_args()
             series = util.fromjson(args.series, args.name, args.tzaware)
@@ -271,7 +271,7 @@ def blueprint(uri,
 
             return '', 200 if exists else 201
 
-        @api.doc(parser=rename)
+        @api.expect(rename)
         def put(self):
             args = rename.parse_args()
             if not tsa.exists(args.name):
@@ -289,7 +289,7 @@ def blueprint(uri,
             # should be a 204 but https://github.com/flask-restful/flask-restful/issues/736
             return '', 200
 
-        @api.doc(parser=get)
+        @api.expect(get)
         def get(self):
             args = get.parse_args()
             if not tsa.exists(args.name):
@@ -323,7 +323,7 @@ def blueprint(uri,
             response.headers['Content-Type'] = 'application/octet-stream'
             return response
 
-        @api.doc(parser=delete)
+        @api.expect(delete)
         def delete(self):
             args = delete.parse_args()
             if not tsa.exists(args.name):
@@ -342,7 +342,7 @@ def blueprint(uri,
     @ns.route('/history')
     class timeseries_history(Resource):
 
-        @api.doc(parser=history)
+        @api.expect(history)
         def get(self):
             args = history.parse_args()
             if not tsa.exists(args.name):
@@ -377,7 +377,7 @@ def blueprint(uri,
     @ns.route('/staircase')
     class timeseries_staircase(Resource):
 
-        @api.doc(parser=staircase)
+        @api.expect(staircase)
         def get(self):
             args = staircase.parse_args()
             if not tsa.exists(args.name):
@@ -409,7 +409,7 @@ def blueprint(uri,
     @ns.route('/catalog')
     class timeseries_catalog(Resource):
 
-        @api.doc(parser=catalog)
+        @api.expect(catalog)
         def get(self):
             args = catalog.parse_args()
             return tsa.catalog()
