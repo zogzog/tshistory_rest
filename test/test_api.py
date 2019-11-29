@@ -477,7 +477,7 @@ def test_multisource(client, engine):
     assert res.status_code == 201
 
     tsh = tsio.timeseries('other')
-    tsh.insert(
+    tsh.update(
         engine,
         series,
         'test-other-source',
