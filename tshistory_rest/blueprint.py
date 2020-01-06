@@ -199,9 +199,7 @@ def blueprint(uri,
               tshclass=tsio.timeseries,
               sources=()):
 
-    tsa = apiclass(uri, namespace, tshclass)
-    for sourceuri, sourcens in sources:
-        tsa.addsource(sourceuri, sourcens)
+    tsa = apiclass(uri, namespace, tshclass, sources=sources)
 
     @ns.route('/metadata')
     class timeseries_metadata(Resource):
