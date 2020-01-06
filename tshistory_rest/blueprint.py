@@ -410,7 +410,11 @@ def blueprint(uri,
         @api.expect(catalog)
         def get(self):
             args = catalog.parse_args()
-            return tsa.catalog()
+            cat = {
+                f'{uri}!{ns}': series
+                for (uri, ns), series in tsa.catalog().items()
+            }
+            return cat
 
     return bp
 

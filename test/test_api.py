@@ -89,7 +89,12 @@ def test_base(client):
     # catalog
     res = client.get('/series/catalog')
     assert res.status_code == 200
-    assert res.json['test'] == 'primary'
+    assert res.json == {
+        'db://localhost:5433/postgres!tsh': [
+            ['test-naive', 'primary'],
+            ['test', 'primary']
+        ]
+    }
 
     # metadata
     res = client.get('/series/metadata?name=test')
@@ -353,7 +358,13 @@ def test_rename(client):
     })
     assert res.status_code == 200
     res = client.get('/series/catalog')
-    assert res.json['test2'] == 'primary'
+    assert res.json == {
+        'db://localhost:5433/postgres!tsh': [
+            ['test-naive', 'primary'],
+            ['test2', 'primary']
+        ]
+    }
+
     assert 'test' not in res.json
 
     res = client.patch('/series/state', params={
