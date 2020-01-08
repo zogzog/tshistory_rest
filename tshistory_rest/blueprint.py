@@ -176,7 +176,9 @@ staircase.add_argument(
 
 
 catalog = reqparse.RequestParser()
-
+catalog.add_argument(
+    'allsources', type=inputs.boolean, default=True
+)
 
 def binary_pack_meta_data(meta, series):
     stream = io.BytesIO()
@@ -412,7 +414,7 @@ def blueprint(uri,
             args = catalog.parse_args()
             cat = {
                 f'{uri}!{ns}': series
-                for (uri, ns), series in tsa.catalog().items()
+                for (uri, ns), series in tsa.catalog(allsources=args.allsources).items()
             }
             return cat
 

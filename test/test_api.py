@@ -579,3 +579,26 @@ def test_multisource(client, engine):
     assert res.json == {
         'message': 'not allowed to rename to a secondary source'
     }
+
+    # catalog
+    res = client.get('/series/catalog')
+    assert res.status_code == 200
+    assert res.json == {
+        'db://localhost:5433/postgres!other': [
+            ['test-other-source', 'primary']
+        ],
+        'db://localhost:5433/postgres!tsh': [
+            ['test-naive', 'primary'],
+            ['test2', 'primary'],
+            ['test3', 'primary'],
+            ['staircase', 'primary'],
+            ['test_fast', 'primary'],
+            ['test-multi', 'primary']
+        ]
+    }
+    res = client.get('/series/catalog', params={
+        'allsources': False
+    })
+    assert res.status_code == 200
+    assert 'db://localhost:5433/postgres!tsh' in res.json
+    assert 'db://localhost:5433/postgres!other' not in res.json
