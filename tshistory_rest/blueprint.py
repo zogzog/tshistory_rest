@@ -196,6 +196,8 @@ def blueprint(uri,
               tshclass=tsio.timeseries,
               sources=()):
 
+    # warn against playing proxy games
+    assert uri.startswith('postgres'), 'we only take a db uri there'
     tsa = tsapi.timeseries(uri, namespace, tshclass, sources=sources)
 
     @ns.route('/metadata')
