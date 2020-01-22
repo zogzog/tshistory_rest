@@ -166,6 +166,9 @@ history.add_argument(
     'diffmode', type=inputs.boolean, default=False
 )
 history.add_argument(
+    '_keep_nans', type=inputs.boolean, default=False
+)
+history.add_argument(
     'format', type=enum('json', 'tshpack'), default='json'
 )
 
@@ -351,7 +354,8 @@ def blueprint(uri,
                 to_insertion_date=args.to_insertion_date,
                 from_value_date=args.from_value_date,
                 to_value_date=args.to_value_date,
-                diffmode=args.diffmode
+                diffmode=args.diffmode,
+                _keep_nans=args._keep_nans
             )
             metadata = tsa.metadata(args.name, all=True)
 
