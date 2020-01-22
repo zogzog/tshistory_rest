@@ -197,11 +197,10 @@ def binary_pack_meta_data(meta, series):
 
 def blueprint(uri,
               namespace='tsh',
-              apiclass=tsapi.timeseries,
               tshclass=tsio.timeseries,
               sources=()):
 
-    tsa = apiclass(uri, namespace, tshclass, sources=sources)
+    tsa = tsapi.timeseries(uri, namespace, tshclass, sources=sources)
 
     @ns.route('/metadata')
     class timeseries_metadata(Resource):
