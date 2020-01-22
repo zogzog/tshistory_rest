@@ -48,33 +48,6 @@ def binary_pack_meta_data(meta, series):
     )
 
 
-bp = Blueprint(
-    'tshistory_rest',
-    __name__,
-    template_folder='tshr_templates',
-    static_folder='tshr_static',
-)
-
-class Api(baseapi):
-
-    # see https://github.com/flask-restful/flask-restful/issues/67
-    def _help_on_404(self, message=None):
-        return message or 'No such thing.'
-
-
-api = Api(
-    bp,
-    version='1.0',
-    title='tshistory api',
-    description='tshistory timeseries store rest api'
-)
-api.namespaces.pop(0)  # wipe the default namespace
-
-ns = api.namespace(
-    'series',
-    description='Time Series Operations'
-)
-
 base = reqparse.RequestParser()
 
 base.add_argument(
@@ -202,6 +175,37 @@ def blueprint(uri,
     # warn against playing proxy games
     assert uri.startswith('postgres'), 'we only take a db uri there'
     tsa = tsapi.timeseries(uri, namespace, tshclass, sources=sources)
+
+    bp = Blueprint(
+        'tshistory_rest',
+        __name__,
+        template_folder='tshr_templates',
+        static_folder='tshr_static',
+    )
+
+    # api & ns
+
+    class Api(baseapi):
+
+        # see https://github.com/flask-restful/flask-restful/issues/67
+        def _help_on_404(self, message=None):
+            return message or 'No such thing.'
+
+    api = Api(
+        bp,
+        version='1.0',
+        title='tshistory api',
+        description='tshistory timeseries store rest api'
+    )
+    api.namespaces.pop(0)  # wipe the default namespace
+
+    ns = api.namespace(
+        'series',
+        description='Time Series Operations'
+    )
+
+
+    # routes
 
     @ns.route('/metadata')
     class timeseries_metadata(Resource):
