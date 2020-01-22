@@ -1,5 +1,4 @@
 import json
-import io
 import zlib
 from array import array
 
@@ -181,18 +180,14 @@ catalog.add_argument(
 )
 
 def binary_pack_meta_data(meta, series):
-    stream = io.BytesIO()
     index, values = util.numpy_serialize(
         series,
         meta['value_type'] == 'object'
     )
     bmeta = json.dumps(meta).encode('utf-8')
-    stream.write(
-        zlib.compress(
-            util.nary_pack(bmeta, index, values)
-        )
+    return zlib.compress(
+        util.nary_pack(bmeta, index, values)
     )
-    return stream.getvalue()
 
 
 def blueprint(uri,
