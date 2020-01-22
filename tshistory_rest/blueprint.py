@@ -37,6 +37,17 @@ def enum(*enum):
     return _str
 
 
+def binary_pack_meta_data(meta, series):
+    index, values = util.numpy_serialize(
+        series,
+        meta['value_type'] == 'object'
+    )
+    bmeta = json.dumps(meta).encode('utf-8')
+    return zlib.compress(
+        util.nary_pack(bmeta, index, values)
+    )
+
+
 bp = Blueprint(
     'tshistory_rest',
     __name__,
@@ -178,16 +189,6 @@ catalog = reqparse.RequestParser()
 catalog.add_argument(
     'allsources', type=inputs.boolean, default=True
 )
-
-def binary_pack_meta_data(meta, series):
-    index, values = util.numpy_serialize(
-        series,
-        meta['value_type'] == 'object'
-    )
-    bmeta = json.dumps(meta).encode('utf-8')
-    return zlib.compress(
-        util.nary_pack(bmeta, index, values)
-    )
 
 
 def blueprint(uri,
