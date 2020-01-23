@@ -333,7 +333,7 @@ def test_delete(client):
     res = client.delete('/series/state', params={
         'name': 'test'
     })
-    assert res.status_code == 200
+    assert res.status_code == 204
     res = client.get('/series/catalog')
     assert 'test' not in res.json
 
@@ -356,7 +356,7 @@ def test_rename(client):
         'name': 'test',
         'newname': 'test2'
     })
-    assert res.status_code == 200
+    assert res.status_code == 204
     res = client.get('/series/catalog')
     assert res.json == {
         'db://localhost:5433/postgres!tsh': [

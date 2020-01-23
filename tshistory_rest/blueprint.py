@@ -304,8 +304,7 @@ def blueprint(uri,
                     api.abort(405, err.args[0])
                 raise
 
-            # should be a 204 but https://github.com/flask-restful/flask-restful/issues/736
-            return '', 200
+            return no_content()
 
         @api.expect(get)
         def get(self):
@@ -354,8 +353,7 @@ def blueprint(uri,
                     api.abort(405, err.args[0])
                 raise
 
-            # should be a 204 but https://github.com/flask-restful/flask-restful/issues/736
-            return args.name, 200
+            return no_content()
 
     @ns.route('/history')
     class timeseries_history(Resource):
