@@ -5,7 +5,11 @@ from array import array
 import numpy as np
 import pandas as pd
 
-from flask import Blueprint, request, make_response
+from flask import (
+    Blueprint,
+    make_response,
+    request
+)
 from flask_restplus import (
     Api as baseapi,
     inputs,
@@ -224,7 +228,14 @@ def blueprint(uri,
                 return stype, 200
             else:
                 assert args.type == 'interval'
-                ival = tsa.interval(args.name)
+                try:
+                    ival = tsa.interval(args.name)
+                except ValueError as err:
+                    # see https://github.com/flask-restful/flask-restful/issues/736
+                    resp = make_response('', 204)
+                    # wipe Content-Length
+                    resp.headers.clear()
+                    return resp
                 tzaware = tsa.metadata(args.name, all=True).get('tzaware', False)
                 return (tzaware,
                         ival.left.isoformat(),
