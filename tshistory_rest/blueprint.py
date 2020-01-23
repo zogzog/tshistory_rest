@@ -52,6 +52,13 @@ def binary_pack_meta_data(meta, series):
     )
 
 
+def no_content():
+    # see https://github.com/flask-restful/flask-restful/issues/736
+    resp = make_response('', 204)
+    resp.headers.clear()
+    return resp
+
+
 base = reqparse.RequestParser()
 
 base.add_argument(
@@ -231,11 +238,7 @@ def blueprint(uri,
                 try:
                     ival = tsa.interval(args.name)
                 except ValueError as err:
-                    # see https://github.com/flask-restful/flask-restful/issues/736
-                    resp = make_response('', 204)
-                    # wipe Content-Length
-                    resp.headers.clear()
-                    return resp
+                    return no_content()
                 tzaware = tsa.metadata(args.name, all=True).get('tzaware', False)
                 return (tzaware,
                         ival.left.isoformat(),
