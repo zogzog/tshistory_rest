@@ -6,7 +6,7 @@ import pytest
 from pytest_sa_pg import db
 import webtest
 
-from tshistory import schema
+from tshistory import schema, api
 from tshistory_rest import app
 
 
@@ -43,8 +43,10 @@ class WebTester(webtest.TestApp):
 @pytest.fixture(scope='session')
 def client(engine):
     wsgi = app.make_app(
-        str(engine.url),
-        namespace='tsh',
-        sources=[(DBURI, 'other')]
+        api.timeseries(
+            str(engine.url),
+            namespace='tsh',
+            sources=[(DBURI, 'other')]
+        )
     )
     yield WebTester(wsgi)

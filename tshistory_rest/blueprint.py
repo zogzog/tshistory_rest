@@ -178,14 +178,10 @@ catalog.add_argument(
 )
 
 
-def blueprint(uri,
-              namespace='tsh',
-              tshclass=tsio.timeseries,
-              sources=()):
+def blueprint(tsa):
 
     # warn against playing proxy games
-    assert uri.startswith('postgres'), 'we only take a db uri there'
-    tsa = tsapi.timeseries(uri, namespace, tshclass, sources=sources)
+    assert isinstance(tsa, tsapi.dbtimeseries)
 
     bp = Blueprint(
         'tshistory_rest',
