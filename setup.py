@@ -2,7 +2,7 @@ from setuptools import setup
 
 
 setup(name='tshistory_rest',
-      version='0.7.0',
+      version='0.8.0',
       author='Pythonian',
       author_email='aurelien.campeas@pythonian.fr',
       url='https://bitbucket.org/pythonian/tshistory_rest',
