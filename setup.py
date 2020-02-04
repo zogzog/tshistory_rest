@@ -1,4 +1,8 @@
+from pathlib import Path
 from setuptools import setup
+
+
+doc = Path(__file__).parent / 'README.md'
 
 
 setup(name='tshistory_rest',
@@ -7,7 +11,8 @@ setup(name='tshistory_rest',
       author_email='aurelien.campeas@pythonian.fr',
       url='https://bitbucket.org/pythonian/tshistory_rest',
       description='timeseries histories http front & python client',
-
+      long_description=doc.read_text(),
+      long_description_content_type='text/markdown',
       packages=['tshistory_rest'],
       install_requires=[
           'flask-restplus',
