@@ -1,8 +1,7 @@
 import json
-import pandas as pd
 import zlib
-import numpy as np
 
+import pandas as pd
 import pytest
 
 from tshistory import util, tsio
@@ -395,9 +394,9 @@ def test_rename(client):
 
 def test_staircase(client):
     # each days we insert 7 data points
-    for idx, idate in enumerate(pd.date_range(start=utcdt(2015, 1, 1),
-                                              end=utcdt(2015, 1, 4),
-                                              freq='D')):
+    for idate in pd.date_range(start=utcdt(2015, 1, 1),
+                               end=utcdt(2015, 1, 4),
+                               freq='D'):
         series = genserie(start=idate, freq='H', repeat=7)
         client.patch('/series/state', params={
             'name': 'staircase',
@@ -405,7 +404,7 @@ def test_staircase(client):
             'author': 'Babar',
             'insertion_date': idate,
             'tzaware': util.tzaware_serie(series)
-    })
+        })
 
     res = client.get('/series/staircase', params={
         'name': 'staircase',
