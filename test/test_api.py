@@ -2,7 +2,6 @@ import json
 import pandas as pd
 import zlib
 import numpy as np
-from array import array
 
 from tshistory import util, tsio
 from tshistory.testutil import (

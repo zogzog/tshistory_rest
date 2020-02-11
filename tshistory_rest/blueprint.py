@@ -1,14 +1,11 @@
 import json
 import zlib
-from array import array
 
-import numpy as np
 import pandas as pd
 
 from flask import (
     Blueprint,
-    make_response,
-    request
+    make_response
 )
 from flask_restplus import (
     Api as baseapi,
@@ -17,7 +14,7 @@ from flask_restplus import (
     reqparse
 )
 
-from tshistory import api as tsapi, util, tsio
+from tshistory import api as tsapi, util
 
 
 def utcdt(dtstr):
