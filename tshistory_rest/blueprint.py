@@ -17,6 +17,14 @@ from flask_restplus import (
 from tshistory import api as tsapi, util
 
 
+def has_formula():
+    try:
+        import tshistory_formula.api
+    except ImportError:
+        return False
+    return True
+
+
 def utcdt(dtstr):
     return pd.Timestamp(dtstr)
 
@@ -168,10 +176,26 @@ staircase.add_argument(
     'format', type=enum('json', 'tshpack'), default='json'
 )
 
-
 catalog = reqparse.RequestParser()
 catalog.add_argument(
     'allsources', type=inputs.boolean, default=True
+)
+
+formula = base.copy()
+
+register_formula = base.copy()
+register_formula.add_argument(
+    'text', type=str, required=True,
+    help='source of the formula'
+)
+register_formula.add_argument(
+    'reject_unknown', type=inputs.boolean, default=True,
+    help='fail if the referenced series do not exist'
+)
+register_formula.add_argument(
+    # note: `update` won't work as it is a method of parse objects
+    'force_update', type=inputs.boolean, default=False,
+    help='accept to update an existing formula if true'
 )
 
 
@@ -428,5 +452,50 @@ def blueprint(tsa):
             }
             return cat
 
-    return bp
+    if not has_formula():
+        return bp
 
+    # formula extension if the plugin is there
+
+    @ns.route('/formula')
+    class timeseries_formula(Resource):
+
+        @api.expect(formula)
+        def get(self):
+            args = formula.parse_args()
+            if not tsa.exists(args.name):
+                api.abort(404, f'`{args.name}` does not exists')
+
+            if not tsa.type(args.name):
+                api.abort(409, f'`{args.name}` exists but is not a formula')
+
+            form = tsa.formula(args.name)
+            return form, 200
+
+
+        @api.expect(register_formula)
+        def patch(self):
+            args = register_formula.parse_args()
+
+            exists = tsa.formula(args.name)
+            try:
+                tsa.register_formula(
+                    args.name,
+                    args.text,
+                    reject_unknown=args.reject_unknown,
+                    update=args.force_update
+                )
+            except TypeError as err:
+                api.abort(409, err.args[0])
+            except ValueError as err:
+                api.abort(409, err.args[0])
+            except AssertionError as err:
+                api.abort(409, err.args[0])
+            except SyntaxError:
+                api.abort(400, f'`{args.name}` has a syntax error in it')
+            except Exception:
+                raise
+
+            return '', 200 if exists else 201
+
+    return bp
