@@ -7,19 +7,11 @@ from pytest_sa_pg import db
 import webtest
 
 from tshistory import schema, api
-from tshistory_rest import app
+from tshistory_rest import app, util
 
 
 DATADIR = Path(__file__).parent / 'data'
 DBURI = 'postgresql://localhost:5433/postgres'
-
-
-def has_formula():
-    try:
-        import tshistory_formula.api
-    except ImportError:
-        return False
-    return True
 
 
 def handler():
@@ -42,7 +34,7 @@ def engine(request):
     sch = schema.tsschema(ns='other')
     sch.create(e)
 
-    if has_formula():
+    if util.has_formula():
         from tshistory_formula.schema import formula_schema
         formula_schema().create(e)
         formula_schema('other').create(e)
