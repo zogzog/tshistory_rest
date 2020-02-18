@@ -6,7 +6,7 @@ from flask import (
     Blueprint,
     make_response
 )
-from flask_restplus import (
+from flask_restx import (
     Api as baseapi,
     inputs,
     Resource,

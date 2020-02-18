@@ -15,7 +15,7 @@ setup(name='tshistory_rest',
       long_description_content_type='text/markdown',
       packages=['tshistory_rest'],
       install_requires=[
-          'flask-restplus',
+          'flask-restx',
           'tshistory',
           'requests',
           'pytest_sa_pg',
